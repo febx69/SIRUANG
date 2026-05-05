@@ -1,0 +1,116 @@
+/* src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* TEMA BARU: MODERN SLATE - Disesuaikan */
+    --background: 220 20% 95%; /* Latar belakang abu-abu sedikit lebih gelap */
+    --foreground: 222 47% 11%; /* Teks hitam kebiruan */
+
+    --card: 220 20% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 220 20% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Warna utama diubah menjadi biru profesional */
+    --primary: 217 91% 60%; 
+    --primary-foreground: 0 0% 100%;
+    --primary-dark: 217 91% 50%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 220 14% 96%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 217 91% 60%; /* Ring disesuaikan dengan warna primer baru */
+
+    /* Variabel lama disesuaikan untuk konsistensi */
+    --government-green: 217 91% 60%;
+    --government-green-dark: 217 91% 50%;
+    --government-green-light: 217 91% 70%;
+    --government-accent: 45 93% 47%;
+    
+    --gradient-primary: linear-gradient(135deg, hsl(var(--background)), hsl(var(--card)));
+    --gradient-header: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary-dark)));
+    
+    --shadow-government: 0 4px 20px -4px hsl(var(--primary) / 0.2);
+    --shadow-elevated: 0 8px 30px -8px hsl(var(--primary) / 0.25);
+
+    --radius: 0.75rem; /* Border radius sedikit lebih besar untuk kesan modern */
+  }
+
+  .dark {
+    /* Dark mode disempurnakan */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 216 34% 17%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217 33% 25%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 25%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 25%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 25%;
+    --input: 217 33% 25%;
+    --ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Menambahkan transisi halus ke elemen dengan kelas focus-visible-ring */
+.focus-visible-ring {
+  @apply transition-all duration-200;
+}
+
+/* Menerapkan efek glow pada saat hover untuk input dan textarea */
+input.focus-visible-ring:hover,
+textarea.focus-visible-ring:hover {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.3);
+  border-color: hsl(var(--ring));
+}
+
+/* Untuk Select (dropdown), kita hanya ubah warna bordernya saat hover */
+.select-trigger.focus-visible-ring:hover {
+  border-color: hsl(var(--ring));
+}
+
+/* Override default focus-visible untuk input, select, textarea agar tidak double */
+input[type="text"].focus-visible-ring:focus-visible,
+input[type="password"].focus-visible-ring:focus-visible,
+input[type="date"].focus-visible-ring:focus-visible,
+textarea.focus-visible-ring:focus-visible,
+.select-trigger.focus-visible-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.3);
+  border-color: hsl(var(--ring));
+}
