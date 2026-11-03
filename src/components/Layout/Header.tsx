@@ -1,6 +1,7 @@
 // src/components/Layout/Header.tsx - Dark Navy Executive Header as in screenshot
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { isUserPBPU } from "@/hooks/useSupabaseAuth";
 import {
   Home,
   Armchair,
@@ -69,12 +70,6 @@ const Header = ({ user, onLogout }: HeaderProps) => {
       isActive: (pathname: string) => pathname === "/"
     },
     {
-      name: "PBPU BP",
-      path: "/pbpu-bp",
-      icon: HeartHandshake,
-      isActive: (pathname: string) => pathname === "/pbpu-bp"
-    },
-    {
       name: "Ruangan",
       path: "/ruangan",
       icon: Armchair,
@@ -112,36 +107,24 @@ const Header = ({ user, onLogout }: HeaderProps) => {
     }
   ];
 
-  if (isPengurusBarang) {
-    // Sesuai permintaan: Pengurus Barang HANYA SHS (dan Beranda)
+  // KHUSUS Akun Bidang Yankes dan Administrator: Tambahkan menu PBPU BP tepat setelah Beranda
+  if (isUserPBPU(user)) {
+    navItems.splice(1, 0, {
+      name: "PBPU BP",
+      path: "/pbpu-bp",
+      icon: HeartHandshake,
+      isActive: (pathname: string) => pathname === "/pbpu-bp"
+    });
+  }
+
+  if (isPuskesmas || isPengurusBarang) {
+    // Sesuai permintaan: Menu yang muncul HANYA SHS (dan Beranda)
     navItems = [
       {
         name: "Beranda",
         path: "/",
         icon: Home,
         isActive: (pathname: string) => pathname === "/"
-      },
-      {
-        name: "Usulan SHS",
-        path: "/usulan-shs",
-        icon: FileSpreadsheet,
-        isActive: (pathname: string) => pathname === "/usulan-shs"
-      }
-    ];
-  } else if (isPuskesmas) {
-    // Puskesmas: Beranda, Usulan SHS, dan Pendaftaran PBPU BP
-    navItems = [
-      {
-        name: "Beranda",
-        path: "/",
-        icon: Home,
-        isActive: (pathname: string) => pathname === "/"
-      },
-      {
-        name: "PBPU BP",
-        path: "/pbpu-bp",
-        icon: HeartHandshake,
-        isActive: (pathname: string) => pathname === "/pbpu-bp"
       },
       {
         name: "Usulan SHS",

@@ -124,3 +124,4 @@ CREATE POLICY "Allow insert pbpu_nik_history" ON public.pbpu_nik_history FOR INS
 
 CREATE POLICY "Allow select pbpu_status_history" ON public.pbpu_status_history FOR SELECT USING (true);
 CREATE POLICY "Allow insert pbpu_status_history" ON public.pbpu_status_history FOR INSERT WITH CHECK (true);
+

@@ -175,3 +175,4 @@ export const PUSKESMAS_CONDITION_CATEGORIES = [
   'Kondisi Tertentu: Penyakit Kronis / Ibu Hamil / Gawat Darurat',
   'Masyarakat Sakit di Luar Kondisi Tertentu',
 ] as const;
+

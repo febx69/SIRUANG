@@ -1,7 +1,7 @@
 // src/pages/PBPUPage.tsx
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useSupabaseAuth, isUserPBPU } from '@/hooks/useSupabaseAuth';
 import { usePBPU } from '@/hooks/usePBPU';
 import Header from '@/components/Layout/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -51,6 +51,11 @@ export const PBPUPage: React.FC = () => {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Khusus Akun Bidang Yankes dan Admin: Jika selain itu mencoba membuka, langsung lempar kembali ke Beranda
+  if (!isUserPBPU(user)) {
+    return <Navigate to="/" replace />;
   }
 
   return (
@@ -210,3 +215,4 @@ export const PBPUPage: React.FC = () => {
 };
 
 export default PBPUPage;
+

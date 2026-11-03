@@ -52,6 +52,13 @@ export const isUserPengurusBarang = (user: User | null): boolean => {
   return user.role === 'pengurus_barang' || (user.username || '').toLowerCase().startsWith('pengurus');
 };
 
+export const isUserPBPU = (user: User | null): boolean => {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  const uname = (user.username || '').toLowerCase();
+  return uname === 'yankes' || uname.includes('yankes') || uname === 'dinsos' || uname === 'dukcapil';
+};
+
 export const useSupabaseAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);

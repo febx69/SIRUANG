@@ -5,7 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
-import { useSupabaseAuth, isUserOB } from "./hooks/useSupabaseAuth";
+import { useSupabaseAuth, isUserOB, isUserPBPU } from "./hooks/useSupabaseAuth";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Index from "./pages/Index";
@@ -56,6 +56,17 @@ const AdminGuard = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Guard Khusus Modul PBPU BP: Khusus Akun Bidang Yankes dan Administrator
+const PBPUGuard = ({ children }: { children: React.ReactNode }) => {
+  const { user, isLoading } = useSupabaseAuth();
+  if (isLoading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!isUserPBPU(user)) {
+    return <Navigate to="/" replace />;
+  }
+  return <>{children}</>;
+};
+
 const AppContent = ({ appReady }: { appReady: boolean }) => {
   const location = useLocation();
   const [pageVisible, setPageVisible] = useState(false);
@@ -96,8 +107,8 @@ const AppContent = ({ appReady }: { appReady: boolean }) => {
         {/* Modul Standar Harga Satuan (Terbuka untuk Puskesmas, Bidang, & Admin; ditutup untuk OB) */}
         <Route path="/usulan-shs" element={<OBRestriction><UsulanSHS /></OBRestriction>} />
         
-        {/* Modul Pendaftaran & Verifikasi PBPU BP (Terbuka untuk Yankes, Puskesmas, Dinsos, Admin; ditutup untuk OB) */}
-        <Route path="/pbpu-bp" element={<OBRestriction><PBPUPage /></OBRestriction>} />
+        {/* Modul Pendaftaran & Verifikasi PBPU BP: Khusus Akun Bidang Yankes & Admin */}
+        <Route path="/pbpu-bp" element={<PBPUGuard><PBPUPage /></PBPUGuard>} />
         
         <Route path="*" element={<NotFound />} />
       </Routes>

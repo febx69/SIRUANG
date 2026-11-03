@@ -1,7 +1,7 @@
 // src/pages/Dashboard.tsx
 import { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
-import { useSupabaseAuth, isUserOB } from "@/hooks/useSupabaseAuth";
+import { useSupabaseAuth, isUserOB, isUserPBPU } from "@/hooks/useSupabaseAuth";
 import Header from "@/components/Layout/Header";
 import { Building2, Video, Car, ChevronRight, Users, Calendar, Sparkles, Laptop, FileSpreadsheet, HeartHandshake, ShieldCheck } from "lucide-react";
 
@@ -127,20 +127,23 @@ const Dashboard = () => {
     },
   ];
 
-  // Pemetaan kartu berdasarkan peran
-  let cards = allCards;
-  if (isPengurusBarang) {
+  // Pemetaan kartu berdasarkan peran (PBPU BP HANYA boleh muncul untuk Bidang Yankes & Admin)
+  let cards = allCards.filter(c => {
+    if (c.id === "pbpu") {
+      return isUserPBPU(user);
+    }
+    return true;
+  });
+
+  if (isPengurusBarang || isPuskesmas) {
     cards = allCards.filter(c => c.id === "shs");
-  } else if (isPuskesmas) {
-    cards = allCards.filter(c => c.id === "shs" || c.id === "pbpu");
   } else if (isOB) {
     cards = allCards.filter(c => c.id === "kebersihan" || c.id === "ruangan");
   } else if (user?.username === "yankes") {
     // Akun Bidang Yankes: tampilkan PBPU BP di urutan pertama
-    cards = [
-      allCards.find(c => c.id === "pbpu")!,
-      ...allCards.filter(c => c.id !== "pbpu")
-    ];
+    const pbpuCard = allCards.find(c => c.id === "pbpu");
+    const otherCards = cards.filter(c => c.id !== "pbpu");
+    cards = pbpuCard ? [pbpuCard, ...otherCards] : otherCards;
   }
 
   return (
