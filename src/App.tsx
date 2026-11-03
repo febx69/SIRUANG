@@ -17,6 +17,7 @@ import Mobil from "./pages/Mobil";
 import Kebersihan from "./pages/Kebersihan";
 import ITSupport from "./pages/ITSupport";
 import UsulanSHS from "./pages/UsulanSHS";
+import PBPUPage from "./pages/PBPUPage";
 import AdminPanel from "./pages/AdminPanel";
 import SplashScreen from "./components/SplashScreen";
 
@@ -94,6 +95,9 @@ const AppContent = ({ appReady }: { appReady: boolean }) => {
 
         {/* Modul Standar Harga Satuan (Terbuka untuk Puskesmas, Bidang, & Admin; ditutup untuk OB) */}
         <Route path="/usulan-shs" element={<OBRestriction><UsulanSHS /></OBRestriction>} />
+        
+        {/* Modul Pendaftaran & Verifikasi PBPU BP (Terbuka untuk Yankes, Puskesmas, Dinsos, Admin; ditutup untuk OB) */}
+        <Route path="/pbpu-bp" element={<OBRestriction><PBPUPage /></OBRestriction>} />
         
         <Route path="*" element={<NotFound />} />
       </Routes>

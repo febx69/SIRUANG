@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useSupabaseAuth, isUserOB } from "@/hooks/useSupabaseAuth";
 import Header from "@/components/Layout/Header";
-import { Building2, Video, Car, ChevronRight, Users, Calendar, Sparkles, Laptop, FileSpreadsheet } from "lucide-react";
+import { Building2, Video, Car, ChevronRight, Users, Calendar, Sparkles, Laptop, FileSpreadsheet, HeartHandshake, ShieldCheck } from "lucide-react";
 
 const Dashboard = () => {
   const { user, logout, isLoading } = useSupabaseAuth();
@@ -109,15 +109,38 @@ const Dashboard = () => {
       meta: "Periode & Usulan SHS",
       metaIcon: Calendar,
     },
+    {
+      id: "pbpu",
+      path: "/pbpu-bp",
+      icon: HeartHandshake,
+      iconBg: "rgba(15,118,110,0.08)",
+      iconColor: "#0f766e",
+      glowColor: "rgba(15,118,110,0.15)",
+      borderHover: "rgba(15,118,110,0.3)",
+      accentColor: "#0f766e",
+      title: "Pendaftaran PBPU BP",
+      desc: user?.username === "yankes"
+        ? "Pusat verifikasi kepesertaan PBPU BP dari Puskesmas & Dinsos, validasi NIK Dukcapil, dan ekspor rekapitulasi."
+        : "Pendaftaran calon peserta PBPU BP (PBI APBD) Pemerintah Daerah, kelengkapan berkas DPJP/SKTM/Desil, dan pantau status.",
+      meta: user?.username === "yankes" ? "Verifikasi Bidang Yankes" : "Pendaftaran & Verifikasi",
+      metaIcon: ShieldCheck,
+    },
   ];
 
-  // Jika login Puskesmas atau Pengurus Barang: Menu/kartu yang muncul HANYA SHS!
-  // Jika login Petugas Kebersihan / Fathor: Menu/kartu yang muncul HANYA Monev Kebersihan dan Peminjaman Ruangan!
+  // Pemetaan kartu berdasarkan peran
   let cards = allCards;
-  if (isSingleMenu) {
+  if (isPengurusBarang) {
     cards = allCards.filter(c => c.id === "shs");
+  } else if (isPuskesmas) {
+    cards = allCards.filter(c => c.id === "shs" || c.id === "pbpu");
   } else if (isOB) {
     cards = allCards.filter(c => c.id === "kebersihan" || c.id === "ruangan");
+  } else if (user?.username === "yankes") {
+    // Akun Bidang Yankes: tampilkan PBPU BP di urutan pertama
+    cards = [
+      allCards.find(c => c.id === "pbpu")!,
+      ...allCards.filter(c => c.id !== "pbpu")
+    ];
   }
 
   return (
@@ -176,10 +199,42 @@ const Dashboard = () => {
           </div>
         )}
 
+        {/* BANNER KHUSUS BIDANG YANKES */}
+        {user?.username === "yankes" && (
+          <div
+            className="mb-8 p-6 rounded-2xl border border-teal-500/30 bg-gradient-to-r from-[#0b1329] via-[#0f243a] to-[#134e4a] text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4 animate-enter-from-bottom"
+          >
+            <div className="relative z-10 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-teal-400 text-slate-900 font-extrabold text-[10px] tracking-wider uppercase">
+                  Menu Utama Yankes
+                </span>
+                <span className="text-teal-200 text-xs font-semibold">Bidang Pelayanan Kesehatan</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                Pusat Verifikasi Pendaftaran PBPU BP
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-200 max-w-2xl leading-relaxed">
+                Kelola telaah usulan calon peserta PBPU BP dari Puskesmas dan Dinas Sosial, pemeriksaan syarat dokumen, koordinasi status NIK Dukcapil, serta unduh rekap terverifikasi resmi.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate("/pbpu-bp")}
+              className="relative z-10 w-full md:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+            >
+              <span>Buka Modul PBPU BP</span>
+              <ChevronRight size={16} />
+            </button>
+
+            {/* Subtle glow background */}
+            <div className="absolute right-0 top-0 bottom-0 w-80 bg-teal-500/10 blur-3xl pointer-events-none" />
+          </div>
+        )}
+
         {/* Greeting */}
         <div style={{ textAlign:"center", marginBottom: isSingleMenu || isOB ? "28px" : "40px", animation:"fade-up-card 0.4s cubic-bezier(0.4,0,0.2,1) both" }}>
           <p style={{ fontSize:"0.8rem", color:"#64748b", letterSpacing:"0.15em", textTransform:"uppercase", fontWeight:600, marginBottom:"8px" }}>
-            {isPuskesmas ? "Portal Khusus Puskesmas" : isPengurusBarang ? "Portal Verifikator SHS" : isOB ? "Petugas Kebersihan / OB" : "Selamat datang"}
+            {isPuskesmas ? "Portal Khusus Puskesmas" : isPengurusBarang ? "Portal Verifikator SHS" : user.username === "yankes" ? "Portal Verifikator Yankes (PBPU BP)" : isOB ? "Petugas Kebersihan / OB" : "Selamat datang"}
           </p>
           <h2 style={{ fontSize:"1.75rem", fontWeight:800, color:"#0b1329", margin:"0 0 8px 0" }}>
             {user.username} 👋

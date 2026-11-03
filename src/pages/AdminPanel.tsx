@@ -49,6 +49,7 @@ import {
   Laptop,
   FileSpreadsheet,
   MessageSquare,
+  HeartHandshake,
   Plus,
   Edit,
   Trash2,
@@ -627,6 +628,16 @@ const AdminPanel = () => {
           >
             <MessageSquare size={14} /> Kritik & Aspirasi ({feedbacks.length})
           </Button>
+
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => navigate("/pbpu-bp")}
+            className="gap-2 text-xs font-bold rounded-xl shrink-0 text-teal-700 hover:text-teal-900 hover:bg-teal-50 border border-teal-200"
+          >
+            <HeartHandshake size={14} /> PBPU BP (Yankes)
+          </Button>
         </div>
 
         {/* ======================================================== */}
@@ -776,6 +787,23 @@ const AdminPanel = () => {
                 <div className="text-2xl font-black text-slate-800 mt-2">{feedbacks.length}</div>
                 <div className="text-[11px] text-amber-700 font-medium mt-1">
                   {feedbacks.filter((f) => !f.admin_reply).length} Belum Dibalas
+                </div>
+              </div>
+
+              {/* PBPU BP */}
+              <div
+                onClick={() => navigate("/pbpu-bp")}
+                className="bg-white p-4 rounded-2xl border border-slate-200 hover:border-teal-400 hover:shadow-md transition-all cursor-pointer group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">PBPU BP (Yankes)</span>
+                  <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <HeartHandshake size={16} />
+                  </div>
+                </div>
+                <div className="text-base font-extrabold text-slate-800 mt-2">Pendaftaran & Verifikasi</div>
+                <div className="text-[11px] text-teal-600 font-semibold mt-1">
+                  Buka Portal Bidang Yankes &rarr;
                 </div>
               </div>
             </div>

@@ -1,0 +1,599 @@
+# PRODUCT REQUIREMENTS DOCUMENT (PRD)
+## Aplikasi Pendaftaran PBPU BP – Dinas Kesehatan Kabupaten Pamekasan
+
+**Versi:** 1.0  
+**Tanggal:** 3 November 2026  
+**Platform:** Google Apps Script (Web App), Google Sheets, Google Drive  
+**Status Dokumen:** Draft kebutuhan produk
+
+---
+
+## 1. Ringkasan Produk
+
+Aplikasi Pendaftaran PBPU BP merupakan aplikasi internal berbasis Google Apps Script untuk mengelola usulan pendaftaran masyarakat sebagai peserta PBPU BP. Aplikasi digunakan oleh PIC Puskesmas, PIC Dinas Sosial, PIC Dinas Kesehatan, dan PIC Dukcapil.
+
+Aplikasi menyediakan proses pengajuan, pemeriksaan kelengkapan administrasi, pencatatan status NIK, verifikasi oleh Dinas Kesehatan, pembaruan status NIK oleh Dukcapil, serta rekapitulasi dan dashboard pemantauan.
+
+Aplikasi menjadi alat bantu administrasi dan pemantauan. Keputusan akhir atas kelayakan kepesertaan tetap mengikuti ketentuan dan kewenangan instansi terkait.
+
+## 2. Latar Belakang dan Permasalahan
+
+Proses usulan pendaftaran PBPU BP membutuhkan koordinasi lintas instansi dan dokumen pendukung yang berbeda berdasarkan jalur pengusulan. Tanpa pencatatan terpusat, proses berisiko mengalami:
+- Kesulitan memantau posisi dan status setiap usulan.
+- Dokumen persyaratan tidak lengkap atau sulit ditemukan.
+- Duplikasi data pengusulan.
+- Keterlambatan tindak lanjut NIK bermasalah.
+- Kesulitan membuat rekapitulasi dan melihat tren pengusulan.
+
+Aplikasi ini diharapkan menyediakan satu sumber data terstruktur, jejak proses, dan informasi pemantauan yang dapat diakses sesuai kewenangan masing-masing PIC.
+
+## 3. Tujuan Produk
+
+1. Menyediakan sarana pengusulan PBPU BP oleh PIC Puskesmas dan PIC Dinsos.
+2. Memastikan dokumen administrasi sesuai jalur pengusulan.
+3. Mencatat status pemeriksaan NIK dan tindak lanjut NIK bermasalah.
+4. Memfasilitasi verifikasi usulan oleh PIC Dinkes beserta alasan penolakan.
+5. Menyediakan rekap data usulan yang telah terverifikasi.
+6. Menyajikan dashboard status, tren, dan indikator kinerja proses.
+
+## 4. Pengguna dan Hak Akses
+
+Catatan: kebutuhan menyebutkan “3 pengguna”, tetapi mencantumkan empat kelompok PIC. PRD ini menggunakan **empat peran pengguna** sesuai daftar tugas yang diberikan.
+
+| Peran | Hak akses dan tanggung jawab utama |
+|---|---|
+| PIC Puskesmas | Membuat dan mengelola usulan dari wilayah/unit Puskesmas yang menjadi kewenangannya; mengunggah dokumen; mengisi status NIK awal; melihat status dan riwayat usulannya. |
+| PIC Dinsos | Membuat dan mengelola usulan melalui jalur Dinsos; mengunggah KK/KTP dan bukti Desil 1–5; mengisi status NIK awal; melihat status dan riwayat usulannya. |
+| PIC Dinkes | Melihat usulan lintas pengusul; memeriksa data dan dokumen; menerima/menolak usulan; mengisi alasan penolakan; melihat dashboard; mengunduh rekap usulan terverifikasi. |
+| PIC Dukcapil | Melihat daftar usulan dengan NIK bermasalah; memperbarui status dan catatan tindak lanjut NIK; melihat riwayat pembaruan. |
+
+### 4.1 Prinsip otorisasi
+- Setiap pengguna wajib masuk menggunakan akun Google yang telah didaftarkan oleh administrator.
+- Hak akses ditentukan berdasarkan email dan peran pada tabel pengguna.
+- PIC Puskesmas hanya dapat melihat dan mengelola data unit/wilayah yang ditetapkan kepadanya.
+- PIC Dinsos hanya dapat melihat dan mengelola usulan yang dibuat melalui akun/instansinya.
+- PIC Dinkes dapat melihat seluruh usulan.
+- PIC Dukcapil mendapat akses terbatas pada data yang diperlukan untuk penanganan NIK bermasalah.
+- Pengguna tidak boleh mengubah keputusan verifikasi Dinkes, kecuali melalui proses koreksi yang memiliki jejak audit.
+- Administrator teknis mengelola akun, referensi, konfigurasi, dan pemeliharaan aplikasi; tidak otomatis memiliki kewenangan mengambil keputusan verifikasi.
+
+## 5. Ruang Lingkup
+
+### 5.1 Termasuk dalam versi awal (MVP)
+- Login dan kontrol akses berbasis peran.
+- Formulir pengusulan dari Puskesmas dan Dinsos.
+- Validasi kolom dan dokumen wajib berdasarkan jalur pengusulan.
+- Pencatatan status NIK.
+- Daftar antrean NIK bermasalah untuk PIC Dukcapil.
+- Verifikasi Dinkes: menunggu, ditolak, terverifikasi.
+- Alasan wajib ketika usulan ditolak.
+- Riwayat perubahan status dan aktivitas pengguna.
+- Dashboard dan filter data.
+- Rekap dan ekspor data terverifikasi ke CSV/XLSX.
+- Penyimpanan dokumen di Google Drive dengan pembatasan akses.
+
+### 5.2 Di luar ruang lingkup MVP
+- Integrasi langsung dengan sistem BPJS Kesehatan, Dukcapil, atau sistem pemerintah lainnya.
+- Validasi otomatis NIK ke basis data Dukcapil.
+- Penetapan otomatis kelayakan peserta.
+- Pengiriman data pendaftaran langsung ke sistem kepesertaan.
+- Tanda tangan elektronik tersertifikasi.
+- Aplikasi Android/iOS native.
+
+Fitur di luar ruang lingkup dapat dipertimbangkan sebagai pengembangan lanjutan setelah tersedia persetujuan, akses API, dan dasar kewenangan.
+
+## 6. Kategori Pengusulan dan Persyaratan
+
+### 6.1 Jalur Puskesmas
+
+| Kategori kondisi masyarakat | Dokumen wajib |
+|---|---|
+| Kondisi tertentu: penyakit kronis, ibu hamil, atau gawat darurat | KK atau KTP; Surat Keterangan Diagnosa dari DPJP |
+| Masyarakat sakit di luar kategori kondisi tertentu | KK atau KTP; SKTM |
+
+Ketentuan:
+- Pengusul memilih satu kategori kondisi.
+- Untuk dokumen identitas, minimal salah satu dari KK atau KTP wajib diunggah.
+- Surat keterangan diagnosa DPJP wajib untuk kategori kondisi tertentu.
+- SKTM wajib untuk kategori masyarakat sakit di luar kondisi tertentu.
+- Sistem menolak penyimpanan/pengajuan apabila dokumen wajib belum tersedia.
+- Jenis file yang diterima: PDF, JPG, JPEG, PNG.
+- Ukuran maksimum file ditetapkan administrator; nilai awal yang disarankan 5 MB per file.
+- Dokumen harus dapat dibaca dan tidak rusak.
+
+### 6.2 Jalur Dinas Sosial
+
+| Kategori | Dokumen wajib |
+|---|---|
+| Usulan PIC Dinsos | KK atau KTP; Bukti Desil 1–5 |
+
+Ketentuan:
+- Pengusul wajib memilih/menyatakan kelompok Desil 1–5.
+- Bukti Desil wajib diunggah.
+- Sistem memvalidasi keberadaan dokumen sebelum pengajuan.
+
+### 6.3 Status NIK
+
+Status NIK yang digunakan:
+- **Tidak Bermasalah**
+- **Bermasalah**
+
+Ketentuan:
+- PIC Puskesmas/PIC Dinsos mengisi hasil pemeriksaan awal status NIK saat pengajuan.
+- Jika status NIK “Bermasalah”, usulan otomatis masuk daftar tindak lanjut PIC Dukcapil.
+- PIC Dukcapil dapat memperbarui status NIK setelah tindak lanjut.
+- Setiap pembaruan menyimpan status sebelumnya, status baru, waktu, akun petugas, dan catatan.
+- Status NIK bukan status verifikasi usulan Dinkes. Keduanya merupakan atribut proses yang terpisah.
+- Jika NIK berubah dari “Bermasalah” menjadi “Tidak Bermasalah”, sistem memperbarui indikator tindak lanjut tanpa menghapus riwayat sebelumnya.
+
+## 7. Alur Proses Bisnis
+
+### 7.1 Alur umum
+
+1. PIC Puskesmas atau PIC Dinsos masuk ke aplikasi.
+2. Pengguna mengisi data calon peserta dan memilih jalur/kategori pengusulan.
+3. Pengguna mengunggah dokumen sesuai persyaratan.
+4. Pengguna mengisi status NIK awal.
+5. Pengguna mengirim usulan.
+6. Sistem membuat nomor registrasi unik dan menetapkan status **Menunggu Verifikasi Dinkes**.
+7. Jika NIK ditandai bermasalah, sistem menampilkan usulan pada antrean PIC Dukcapil.
+8. PIC Dukcapil memeriksa tindak lanjut dan memperbarui status NIK beserta catatan.
+9. PIC Dinkes memeriksa data dan dokumen, kemudian memilih:
+   - **Terverifikasi**, atau
+   - **Ditolak Dinkes** dengan alasan penolakan wajib.
+10. Sistem menyimpan hasil verifikasi, petugas, dan waktu proses.
+11. Data berstatus Terverifikasi masuk ke rekap terverifikasi dan dashboard.
+
+### 7.2 Diagram alur ringkas
+
+```mermaid
+flowchart TD
+    A[Mulai] --> B[PIC Puskesmas / Dinsos mengisi usulan]
+    B --> C[Unggah dokumen dan isi status NIK]
+    C --> D{Persyaratan lengkap?}
+    D -- Tidak --> B
+    D -- Ya --> E[Kirim usulan]
+    E --> F[Menunggu Verifikasi Dinkes]
+    F --> G{NIK bermasalah?}
+    G -- Ya --> H[Antrean tindak lanjut Dukcapil]
+    H --> I[Dukcapil memperbarui status NIK]
+    G -- Tidak --> J[Verifikasi Dinkes]
+    I --> J
+    J --> K{Keputusan Dinkes}
+    K -- Terverifikasi --> L[Masuk rekap terverifikasi]
+    K -- Ditolak --> M[Alasan penolakan dicatat]
+    L --> N[Selesai]
+    M --> N
+```
+
+Catatan: penanganan NIK bermasalah berjalan sebagai proses tindak lanjut terpisah. Kebijakan apakah verifikasi Dinkes boleh dilakukan sebelum tindak lanjut Dukcapil selesai perlu ditetapkan oleh pemilik proses.
+
+## 8. Status dan Aturan Transisi
+
+### 8.1 Status usulan utama
+
+| Status | Makna | Penetap |
+|---|---|---|
+| Menunggu Verifikasi Dinkes | Usulan telah dikirim dan menunggu pemeriksaan Dinkes | Sistem saat pengajuan |
+| Ditolak Dinkes | Usulan ditolak setelah pemeriksaan | PIC Dinkes |
+| Terverifikasi | Usulan dinyatakan terverifikasi oleh Dinkes | PIC Dinkes |
+
+### 8.2 Aturan perubahan status
+- Usulan baru otomatis berstatus Menunggu Verifikasi Dinkes.
+- Hanya PIC Dinkes yang dapat mengubah status utama menjadi Ditolak Dinkes atau Terverifikasi.
+- Jika memilih Ditolak Dinkes, alasan penolakan wajib diisi.
+- Keputusan verifikasi menyimpan waktu, email petugas, dan catatan.
+- Usulan yang telah diputuskan tidak dapat diedit oleh pengusul secara langsung.
+- Jika diperlukan koreksi, PIC Dinkes/admin berwenang membuka kembali usulan dengan alasan dan jejak audit. Mekanisme ini perlu disetujui pemilik proses sebelum implementasi.
+- Status utama tidak otomatis berubah hanya karena status NIK diperbarui.
+
+## 9. Kebutuhan Fungsional
+
+| ID | Fitur | Deskripsi | Prioritas |
+|---|---|---|---|
+| FR-001 | Autentikasi | Login menggunakan akun Google yang terdaftar | Must |
+| FR-002 | Otorisasi | Menampilkan menu dan data sesuai peran pengguna | Must |
+| FR-003 | Form usulan Puskesmas | Input data calon peserta, kategori kondisi, dan dokumen sesuai jalur Puskesmas | Must |
+| FR-004 | Form usulan Dinsos | Input data calon peserta, Desil 1–5, dan dokumen sesuai jalur Dinsos | Must |
+| FR-005 | Validasi dokumen | Memastikan dokumen wajib tersedia sebelum usulan dikirim | Must |
+| FR-006 | Nomor registrasi | Membuat ID unik untuk setiap usulan | Must |
+| FR-007 | Status NIK | Mencatat Tidak Bermasalah/Bermasalah | Must |
+| FR-008 | Antrean Dukcapil | Menampilkan usulan dengan NIK bermasalah | Must |
+| FR-009 | Pembaruan NIK | PIC Dukcapil memperbarui status dan catatan tindak lanjut | Must |
+| FR-010 | Verifikasi Dinkes | Memproses usulan menjadi Terverifikasi atau Ditolak Dinkes | Must |
+| FR-011 | Alasan penolakan | Mewajibkan alasan jika usulan ditolak | Must |
+| FR-012 | Riwayat aktivitas | Mencatat aktivitas dan perubahan data penting | Must |
+| FR-013 | Daftar usulan | Menyediakan tabel, pencarian, filter, dan detail usulan | Must |
+| FR-014 | Dashboard | Menampilkan ringkasan dan tren usulan | Must |
+| FR-015 | Rekap terverifikasi | Menyediakan rekap khusus data Terverifikasi | Must |
+| FR-016 | Ekspor | Mengunduh hasil filter/rekap ke CSV atau XLSX | Should |
+| FR-017 | Notifikasi | Menampilkan pemberitahuan status/perlu tindak lanjut di aplikasi | Should |
+| FR-018 | Master pengguna | Admin mengelola email, peran, dan unit kerja | Must |
+| FR-019 | Master referensi | Admin mengelola daftar Puskesmas dan referensi kategori | Should |
+
+## 10. Rancangan Formulir Pengusulan
+
+### 10.1 Data calon peserta
+
+Kolom yang disarankan:
+- Nama lengkap sesuai identitas.
+- NIK (16 digit).
+- Nomor KK (jika tersedia).
+- Tempat lahir.
+- Tanggal lahir.
+- Jenis kelamin.
+- Alamat sesuai identitas.
+- Desa/kelurahan.
+- Kecamatan.
+- Nomor telepon/HP (opsional).
+- Jalur pengusulan: Puskesmas atau Dinsos.
+- Unit pengusul: Puskesmas atau Dinsos terkait.
+- Tanggal pengusulan.
+- Catatan pengusul (opsional).
+
+### 10.2 Data tambahan jalur Puskesmas
+- Kategori kondisi: Penyakit Kronis / Ibu Hamil / Gawat Darurat / Masyarakat Sakit di Luar Kondisi Tertentu.
+- Nama fasilitas pelayanan kesehatan.
+- Nama DPJP (jika relevan).
+- Status NIK awal.
+- Unggah KK/KTP.
+- Unggah Surat Keterangan Diagnosa DPJP atau SKTM sesuai kategori.
+
+### 10.3 Data tambahan jalur Dinsos
+- Desil: 1 / 2 / 3 / 4 / 5.
+- Status NIK awal.
+- Unggah KK/KTP.
+- Unggah bukti Desil 1–5.
+
+### 10.4 Data verifikasi Dinkes
+- Status keputusan.
+- Alasan penolakan (wajib hanya jika Ditolak Dinkes).
+- Catatan verifikator.
+- Nama/email verifikator (otomatis).
+- Tanggal dan waktu verifikasi (otomatis).
+
+### 10.5 Data tindak lanjut Dukcapil
+- Status NIK terkini.
+- Catatan hasil pemeriksaan/perbaikan.
+- Nama/email petugas (otomatis).
+- Tanggal dan waktu pembaruan (otomatis).
+
+## 11. Dashboard dan Pelaporan
+
+### 11.1 Dashboard utama
+Kartu ringkasan:
+- Total seluruh usulan.
+- Menunggu Verifikasi Dinkes.
+- Terverifikasi.
+- Ditolak Dinkes.
+- NIK Bermasalah.
+- NIK Tidak Bermasalah.
+- Jumlah usulan per jalur Puskesmas dan Dinsos.
+
+### 11.2 Visualisasi tren
+- Tren jumlah usulan per hari/minggu/bulan.
+- Tren usulan berdasarkan status utama.
+- Tren usulan berdasarkan jalur pengusul.
+- Tren usulan berdasarkan kategori kondisi Puskesmas.
+- Tren usulan berdasarkan Desil untuk jalur Dinsos.
+- Tren NIK bermasalah dan penyelesaiannya.
+
+### 11.3 Analisis dan tabel dashboard
+- Usulan per Puskesmas.
+- Usulan per kecamatan/desa.
+- Usulan per PIC/pengusul.
+- Rasio terverifikasi, ditolak, dan menunggu.
+- Rata-rata waktu dari pengajuan sampai keputusan Dinkes.
+- Daftar usulan tertua yang masih menunggu verifikasi.
+- Daftar NIK bermasalah yang belum ditindaklanjuti.
+- Daftar usulan yang dokumennya belum lengkap (jika disediakan sebagai draft, bukan usulan terkirim).
+
+### 11.4 Filter dashboard
+- Rentang tanggal pengajuan.
+- Status usulan.
+- Jalur pengusulan.
+- Puskesmas/unit pengusul.
+- Kecamatan.
+- Kategori kondisi.
+- Status NIK.
+- Desil (khusus jalur Dinsos).
+
+Dashboard harus menghitung data dari sumber utama, bukan dari angka yang diinput manual.
+
+## 12. Rekap dan Ekspor
+
+Rekap terverifikasi minimal memuat:
+- Nomor registrasi.
+- Tanggal pengajuan.
+- Nama calon peserta.
+- NIK.
+- Nomor KK (jika tersedia).
+- Alamat/desa/kecamatan.
+- Jalur pengusulan.
+- Unit pengusul.
+- Kategori kondisi atau Desil.
+- Status NIK terkini.
+- Tanggal verifikasi.
+- Verifikator.
+
+Ketentuan:
+- Hanya data berstatus Terverifikasi yang masuk ke rekap terverifikasi.
+- PIC Dinkes dapat memfilter dan mengekspor data sesuai kewenangannya.
+- Ekspor harus mengikuti filter yang sedang aktif.
+- Kolom NIK/nomor KK harus diperlakukan sebagai teks agar angka nol di depan tidak hilang.
+- Akses ekspor data pribadi dibatasi dan dicatat dalam log aktivitas.
+
+## 13. Kebutuhan Nonfungsional
+
+### 13.1 Keamanan dan privasi
+Data NIK, identitas, dokumen keluarga, dan informasi diagnosis merupakan data pribadi yang perlu dilindungi. Implementasi wajib menerapkan:
+- Akses berbasis peran dan prinsip kebutuhan untuk mengetahui (need-to-know).
+- Validasi email pengguna di sisi server pada setiap permintaan penting; jangan hanya menyembunyikan menu di antarmuka.
+- Folder Google Drive tidak boleh dibagikan secara publik atau menggunakan tautan “siapa saja yang memiliki link”.
+- Dokumen hanya dapat diakses oleh akun yang berwenang.
+- Hindari menampilkan NIK lengkap pada dashboard umum; gunakan masking, misalnya `****************`.
+- Jangan menaruh dokumen atau data sensitif pada log aplikasi.
+- Gunakan validasi server-side untuk semua input, termasuk tipe dan ukuran file.
+- Catat aktivitas melihat/mengunduh dokumen jika secara teknis memungkinkan.
+- Terapkan kebijakan retensi dan pemusnahan dokumen sesuai ketentuan instansi.
+- Lakukan penilaian dan persetujuan pengelolaan data pribadi sebelum aplikasi digunakan secara operasional.
+
+### 13.2 Kinerja
+- Halaman daftar menggunakan pagination.
+- Pencarian dan filter dilakukan secara efisien.
+- Dashboard menggunakan agregasi/cache bila volume data meningkat.
+- Proses unggah file memberikan indikator keberhasilan/kegagalan.
+- Aplikasi menangani kegagalan layanan Google dengan pesan yang mudah dipahami.
+
+### 13.3 Keandalan
+- Nomor registrasi harus unik meskipun ada pengajuan bersamaan.
+- Penulisan data kritis menggunakan mekanisme lock untuk mencegah benturan.
+- Kesalahan proses tidak boleh meninggalkan data setengah tersimpan tanpa penanda.
+- Sediakan prosedur pencadangan berkala untuk Spreadsheet dan dokumen Drive.
+- Perubahan struktur sheet harus terdokumentasi.
+
+### 13.4 Kompatibilitas
+- Antarmuka responsif untuk desktop, tablet, dan ponsel.
+- Mendukung browser modern seperti Chrome dan Edge.
+- Bahasa antarmuka: Bahasa Indonesia.
+
+## 14. Rekomendasi Arsitektur Google Apps Script
+
+| Komponen | Fungsi |
+|---|---|
+| Google Apps Script Web App | Antarmuka dan logika aplikasi |
+| Google Sheets | Penyimpanan data terstruktur dan master |
+| Google Drive | Penyimpanan dokumen persyaratan |
+| HTML Service | Halaman antarmuka |
+| Apps Script Services | SpreadsheetApp, DriveApp, LockService, Utilities |
+| Trigger terpasang (opsional) | Rekap terjadwal atau notifikasi |
+
+### 14.1 Struktur modul aplikasi
+- `AuthService`: autentikasi dan pemeriksaan peran.
+- `UserService`: pengelolaan pengguna dan unit kerja.
+- `SubmissionService`: pembuatan dan pembaruan usulan.
+- `DocumentService`: validasi dan penyimpanan dokumen.
+- `NikService`: status dan riwayat tindak lanjut NIK.
+- `VerificationService`: keputusan verifikasi Dinkes.
+- `DashboardService`: agregasi indikator dan tren.
+- `ExportService`: ekspor rekap.
+- `AuditService`: pencatatan aktivitas.
+- `AdminService`: master data dan konfigurasi.
+
+### 14.2 Struktur file proyek yang disarankan
+```text
+PBPU-BP-App/
+├── Code.gs
+├── Config.gs
+├── AuthService.gs
+├── UserService.gs
+├── SubmissionService.gs
+├── DocumentService.gs
+├── NikService.gs
+├── VerificationService.gs
+├── DashboardService.gs
+├── ExportService.gs
+├── AuditService.gs
+├── AdminService.gs
+├── Index.html
+├── Login.html
+├── Dashboard.html
+├── Submissions.html
+├── SubmissionForm.html
+├── SubmissionDetail.html
+├── Verification.html
+├── NikFollowUp.html
+├── Reports.html
+├── Admin.html
+└── Styles.html
+```
+
+## 15. Rancangan Struktur Google Sheets
+
+Disarankan menggunakan satu Spreadsheet khusus aplikasi dengan sheet berikut.
+
+### 15.1 `USULAN`
+| Kolom | Keterangan |
+|---|---|
+| submission_id | ID unik/nomor registrasi |
+| created_at | Waktu pengajuan |
+| updated_at | Waktu perubahan terakhir |
+| applicant_name | Nama calon peserta |
+| nik | NIK sebagai teks |
+| no_kk | Nomor KK sebagai teks, opsional |
+| birth_place | Tempat lahir |
+| birth_date | Tanggal lahir |
+| gender | Jenis kelamin |
+| address | Alamat |
+| village | Desa/kelurahan |
+| district | Kecamatan |
+| phone | Nomor telepon, opsional |
+| submission_channel | PUSKESMAS/DINSOS |
+| submitter_email | Email pengusul |
+| submitter_unit | Nama unit pengusul |
+| condition_category | Kategori kondisi Puskesmas |
+| desil | Nilai 1–5 untuk Dinsos |
+| nik_status | TIDAK_BERMASALAH/BERMASALAH |
+| verification_status | MENUNGGU/DITOLAK/TERVERIFIKASI |
+| rejection_reason | Alasan penolakan |
+| verifier_email | Email verifikator |
+| verified_at | Waktu keputusan |
+| verifier_note | Catatan verifikator |
+| nik_followup_note | Ringkasan tindak lanjut NIK |
+
+### 15.2 `DOKUMEN`
+| Kolom | Keterangan |
+|---|---|
+| document_id | ID dokumen |
+| submission_id | Relasi ke USULAN |
+| document_type | KK/KTP/DIAGNOSA_DPJP/SKTM/BUKTI_DESIL |
+| drive_file_id | ID file Google Drive |
+| file_name | Nama file |
+| mime_type | Tipe file |
+| file_size | Ukuran file |
+| uploaded_by | Email pengunggah |
+| uploaded_at | Waktu unggah |
+| active | Status dokumen aktif |
+
+### 15.3 `RIWAYAT_NIK`
+| Kolom | Keterangan |
+|---|---|
+| history_id | ID riwayat |
+| submission_id | Relasi ke USULAN |
+| old_status | Status sebelumnya |
+| new_status | Status terbaru |
+| note | Catatan tindak lanjut |
+| updated_by | Email petugas Dukcapil |
+| updated_at | Waktu pembaruan |
+
+### 15.4 `RIWAYAT_STATUS`
+| Kolom | Keterangan |
+|---|---|
+| history_id | ID riwayat |
+| submission_id | Relasi ke USULAN |
+| old_status | Status sebelumnya |
+| new_status | Status baru |
+| reason_or_note | Alasan/catatan |
+| changed_by | Email pengguna |
+| changed_at | Waktu perubahan |
+
+### 15.5 `USERS`
+Kolom: `email`, `name`, `role`, `unit_id`, `unit_name`, `active`, `created_at`.
+
+### 15.6 `MASTER_UNIT`
+Kolom: `unit_id`, `unit_name`, `unit_type`, `district`, `active`.
+
+### 15.7 `AUDIT_LOG`
+Kolom: `log_id`, `timestamp`, `user_email`, `role`, `action`, `submission_id`, `result`, `metadata_non_sensitive`.
+
+### 15.8 `SETTINGS`
+Menyimpan konfigurasi seperti ID Spreadsheet, ID folder Drive, batas ukuran file, daftar MIME type, dan pengaturan aplikasi. Rahasia/credential tidak boleh disimpan sebagai teks terbuka di sheet.
+
+## 16. Aturan Validasi Data
+
+- NIK wajib 16 digit angka dan disimpan sebagai teks.
+- Nomor KK, jika diisi, wajib 16 digit angka dan disimpan sebagai teks.
+- Nama dan alamat wajib diisi.
+- Jalur pengusulan wajib dipilih.
+- Jalur Puskesmas wajib memilih kategori kondisi.
+- Jalur Dinsos wajib memilih Desil 1–5.
+- Dokumen wajib mengikuti matriks persyaratan pada Bagian 6.
+- File harus sesuai tipe dan ukuran yang diizinkan.
+- Sistem memberikan peringatan potensi duplikasi berdasarkan NIK. Pengajuan duplikat tidak boleh langsung dihapus; sistem menampilkan usulan terdahulu kepada petugas berwenang untuk ditinjau.
+- Penolakan Dinkes wajib disertai alasan.
+- Pembaruan status NIK oleh Dukcapil wajib disertai catatan tindak lanjut.
+- Tanggal/waktu dan email petugas dibuat otomatis oleh server, bukan dipercaya dari input browser.
+
+## 17. Kriteria Penerimaan (Acceptance Criteria)
+
+1. Pengguna yang tidak terdaftar tidak dapat mengakses aplikasi.
+2. Pengguna hanya melihat menu dan data sesuai perannya.
+3. PIC Puskesmas dapat mengirim usulan kategori kondisi tertentu dengan KK/KTP dan surat diagnosa DPJP.
+4. PIC Puskesmas dapat mengirim usulan masyarakat sakit di luar kondisi tertentu dengan KK/KTP dan SKTM.
+5. PIC Dinsos dapat mengirim usulan dengan KK/KTP dan bukti Desil 1–5.
+6. Sistem menolak pengajuan jika dokumen wajib belum lengkap.
+7. Setiap usulan berhasil memperoleh nomor registrasi unik.
+8. Setiap usulan baru berstatus Menunggu Verifikasi Dinkes.
+9. PIC Dukcapil dapat melihat daftar NIK bermasalah dan memperbarui status beserta catatan.
+10. Riwayat status NIK tidak hilang setelah pembaruan.
+11. PIC Dinkes dapat memverifikasi atau menolak usulan.
+12. Sistem mewajibkan alasan ketika PIC Dinkes memilih Ditolak Dinkes.
+13. Perubahan keputusan/status terekam dengan petugas dan waktu.
+14. Dashboard menampilkan jumlah usulan menurut status dan tren berdasarkan periode.
+15. Rekap terverifikasi hanya memuat usulan dengan status Terverifikasi.
+16. Ekspor mempertahankan NIK dan nomor KK sebagai teks.
+17. Pengguna tanpa kewenangan tidak dapat mengakses file Drive melalui URL langsung.
+18. Sistem menampilkan pesan yang jelas ketika unggah atau penyimpanan gagal.
+
+## 18. Risiko dan Mitigasi
+
+| Risiko | Dampak | Mitigasi |
+|---|---|---|
+| Data pribadi atau dokumen bocor | Tinggi | Pembatasan akses Drive, masking NIK, audit, dan larangan tautan publik |
+| Akun Google tidak teridentifikasi saat Web App berjalan | Pengguna tidak dapat diverifikasi | Uji metode deployment dan kebijakan akun Workspace sebelum produksi |
+| Kuota Apps Script/Google Sheets terlampaui | Aplikasi lambat/gagal | Pagination, batching, cache, monitoring kuota, dan evaluasi basis data bila volume meningkat |
+| Pengajuan ganda | Data tidak akurat | Peringatan duplikasi berdasarkan NIK dan pemeriksaan petugas |
+| Perubahan data tanpa jejak | Sulit diaudit | Audit log dan tabel riwayat terpisah |
+| Salah menetapkan kewenangan status | Keputusan tidak sah | Validasi peran di server dan matriks kewenangan |
+| Dokumen tidak terbaca | Verifikasi tertunda | Validasi tipe/ukuran dan panduan unggah |
+| Status NIK dan status usulan tertukar | Salah interpretasi | Pisahkan field, label, filter, dan visualisasi |
+
+## 19. Tahapan Pengembangan
+
+### Tahap 1 – Fondasi
+- Konfirmasi proses bisnis dan kebijakan akses.
+- Menyiapkan Spreadsheet, folder Drive, master pengguna, dan unit.
+- Membangun autentikasi serta otorisasi.
+
+### Tahap 2 – Pengusulan
+- Form Puskesmas dan Dinsos.
+- Validasi dokumen.
+- Nomor registrasi dan daftar usulan.
+
+### Tahap 3 – NIK dan Verifikasi
+- Antrean NIK bermasalah.
+- Pembaruan status oleh Dukcapil.
+- Verifikasi Dinkes dan alasan penolakan.
+- Riwayat status dan audit.
+
+### Tahap 4 – Dashboard dan Rekap
+- Kartu indikator.
+- Grafik tren dan filter.
+- Rekap terverifikasi dan ekspor.
+
+### Tahap 5 – Uji Coba dan Go-Live
+- Uji peran masing-masing PIC.
+- Uji keamanan akses dokumen.
+- Uji data duplikat, unggah, dan proses bersamaan.
+- Uji penerimaan pengguna (UAT).
+- Pelatihan singkat dan penerapan.
+
+## 20. Hal yang Perlu Diputuskan Sebelum Implementasi
+
+1. **Definisi “pengguna ada 3”:** apakah benar empat peran PIC seperti yang tercantum, atau ada peran yang digabung?
+2. Apakah satu calon peserta dapat diusulkan melalui Puskesmas dan Dinsos sekaligus? Bagaimana penanganan jika NIK sudah pernah diusulkan?
+3. Apakah verifikasi Dinkes harus menunggu status NIK menjadi Tidak Bermasalah, atau dapat berjalan paralel?
+4. Apakah PIC Dinkes boleh mengembalikan usulan untuk perbaikan, atau hanya dapat memilih Terverifikasi/Ditolak Dinkes?
+5. Apakah pengusul boleh mengedit usulan setelah dikirim? Jika ya, sampai tahap/status apa?
+6. Apakah KK dan KTP boleh salah satu saja, atau harus keduanya?
+7. Apakah dokumen diagnosa DPJP harus menggunakan format tertentu dan apakah informasi diagnosis yang disimpan cukup berupa dokumen unggahan?
+8. Siapa yang menjadi administrator aplikasi dan siapa yang menyetujui penambahan akun?
+9. Berapa batas ukuran file dan berapa lama dokumen/data harus disimpan?
+10. Apakah dibutuhkan notifikasi email/WhatsApp, atau cukup notifikasi di dalam aplikasi?
+11. Apakah ada format rekap resmi yang wajib diikuti Dinkes?
+12. Apakah aplikasi digunakan pada akun Google Workspace instansi atau akun Google biasa?
+
+## 21. Asumsi dan Rekomendasi Implementasi
+
+- PRD ini mengasumsikan terdapat empat peran PIC, bukan tiga, karena empat kelompok tugas dijelaskan secara terpisah.
+- “Status usulan” dan “status NIK” merupakan dua hal yang berbeda dan harus disimpan pada kolom terpisah.
+- Status usulan awal adalah Menunggu Verifikasi Dinkes.
+- PIC Dukcapil hanya memperbarui status NIK dan catatan tindak lanjut, bukan mengubah keputusan verifikasi Dinkes.
+- Dokumen identitas dan diagnosis disimpan di folder Drive terbatas, sedangkan Spreadsheet hanya menyimpan metadata dan ID file.
+- Untuk data sensitif dan penggunaan lintas instansi, sebaiknya aplikasi menggunakan akun Google Workspace yang dikelola instansi, dengan persetujuan pengelola keamanan informasi dan pejabat berwenang.
+- Sebelum produksi, lakukan uji deployment untuk memastikan identitas pengguna dapat dibaca dengan benar. Jangan mengandalkan `Session.getActiveUser()` tanpa pengujian pada konfigurasi domain dan deployment yang digunakan.
+- Google Sheets cocok untuk MVP dengan volume dan jumlah pengguna terbatas. Jika volume transaksi, kebutuhan audit, atau akses bersamaan meningkat, pertimbangkan migrasi ke basis data terkelola.
+
+---
+
+**Akhir Dokumen**

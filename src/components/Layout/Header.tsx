@@ -13,7 +13,8 @@ import {
   Menu,
   X,
   LogIn,
-  ShieldCheck
+  ShieldCheck,
+  HeartHandshake
 } from "lucide-react";
 import logoImage from "@/assets/logo-pamekasan.png";
 
@@ -38,8 +39,9 @@ const getInitials = (name?: string) => {
   return trimmed.slice(0, 2).toUpperCase();
 };
 
-const getRoleLabel = (role?: string, is_ob?: boolean) => {
+const getRoleLabel = (role?: string, is_ob?: boolean, username?: string) => {
   if (role === "admin") return "Admin";
+  if (username === "yankes") return "Bidang Yankes";
   if (role === "pengurus_barang") return "Pengurus Barang (Verifikator)";
   if (role === "puskesmas") return "Puskesmas";
   if (is_ob || role === "ob") return "Petugas OB";
@@ -65,6 +67,12 @@ const Header = ({ user, onLogout }: HeaderProps) => {
       path: "/",
       icon: Home,
       isActive: (pathname: string) => pathname === "/"
+    },
+    {
+      name: "PBPU BP",
+      path: "/pbpu-bp",
+      icon: HeartHandshake,
+      isActive: (pathname: string) => pathname === "/pbpu-bp"
     },
     {
       name: "Ruangan",
@@ -104,14 +112,36 @@ const Header = ({ user, onLogout }: HeaderProps) => {
     }
   ];
 
-  if (isPuskesmas || isPengurusBarang) {
-    // Sesuai permintaan: Menu yang muncul HANYA SHS (dan Beranda)
+  if (isPengurusBarang) {
+    // Sesuai permintaan: Pengurus Barang HANYA SHS (dan Beranda)
     navItems = [
       {
         name: "Beranda",
         path: "/",
         icon: Home,
         isActive: (pathname: string) => pathname === "/"
+      },
+      {
+        name: "Usulan SHS",
+        path: "/usulan-shs",
+        icon: FileSpreadsheet,
+        isActive: (pathname: string) => pathname === "/usulan-shs"
+      }
+    ];
+  } else if (isPuskesmas) {
+    // Puskesmas: Beranda, Usulan SHS, dan Pendaftaran PBPU BP
+    navItems = [
+      {
+        name: "Beranda",
+        path: "/",
+        icon: Home,
+        isActive: (pathname: string) => pathname === "/"
+      },
+      {
+        name: "PBPU BP",
+        path: "/pbpu-bp",
+        icon: HeartHandshake,
+        isActive: (pathname: string) => pathname === "/pbpu-bp"
       },
       {
         name: "Usulan SHS",
@@ -235,7 +265,7 @@ const Header = ({ user, onLogout }: HeaderProps) => {
                       {user.username}
                     </span>
                     <span className="text-[10px] text-slate-400 capitalize leading-tight mt-0.5">
-                      {getRoleLabel(user.role, user.is_ob)}
+                      {getRoleLabel(user.role, user.is_ob, user.username)}
                     </span>
                   </div>
                 </div>
@@ -336,7 +366,7 @@ const Header = ({ user, onLogout }: HeaderProps) => {
                 </div>
                 <div>
                   <div className="text-xs font-bold text-white">{user.username}</div>
-                  <div className="text-[10px] text-slate-400 capitalize">{getRoleLabel(user.role, user.is_ob)}</div>
+                  <div className="text-[10px] text-slate-400 capitalize">{getRoleLabel(user.role, user.is_ob, user.username)}</div>
                 </div>
               </div>
               {onLogout && (
