@@ -19,6 +19,8 @@ export interface BookingData {
   endTime: string;
   description: string;
   createdAt?: string;
+  userId?: string | null;
+  user_id?: string | null;
 }
 
 interface BookingFormProps {

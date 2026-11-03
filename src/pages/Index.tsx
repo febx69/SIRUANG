@@ -7,7 +7,7 @@ import BookingForm, { BookingData } from "@/components/Booking/BookingForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 // PERBAIKAN FATAL: MapPin dan Briefcase sudah ditambahkan di sini!
-import { CalendarDays, MessageSquare, Inbox, Trash2, Monitor, Reply, CornerDownRight, Users, Projector, Mic, Cable, Plug, TrendingUp, MapPin, Briefcase } from "lucide-react";
+import { CalendarDays, MessageSquare, Inbox, Trash2, Monitor, Reply, CornerDownRight, Users, Projector, Mic, Cable, Plug, TrendingUp, MapPin, Briefcase, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -142,7 +142,17 @@ const Index = () => {
       <Header user={user} onLogout={logout} />
       
       <main className="container mx-auto px-4 py-6 space-y-6 animate-fade-in">
-        
+        <div className="flex items-center justify-between">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate("/")} 
+            className="gap-2 text-xs font-semibold text-slate-600 hover:text-slate-900 -ml-2"
+          >
+            <ArrowLeft size={16} /> Kembali ke Beranda
+          </Button>
+        </div>
+
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           
           <div className="flex flex-wrap gap-2">
@@ -160,7 +170,7 @@ const Index = () => {
           </div>
 
           <div className="flex justify-end">
-              <Button onClick={() => navigate("/jadwal")} className="gap-2 bg-[#3b82f6] hover:bg-blue-600 text-white shadow-sm">
+              <Button onClick={() => navigate("/jadwal")} className="gap-2 bg-primary hover:bg-primary/90 text-white shadow-sm transition-all">
                   <CalendarDays size={18} /> Lihat Jadwal Ruangan
               </Button>
           </div>

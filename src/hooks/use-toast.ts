@@ -3,7 +3,7 @@ import * as React from "react";
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
 const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 1000000;
+const TOAST_REMOVE_DELAY = 300; // Delay setelah dismiss sebelum dihapus dari array (animasi keluar)
 
 type ToasterToast = ToastProps & {
   id: string;
@@ -85,8 +85,6 @@ export const reducer = (state: State, action: Action): State => {
     case "DISMISS_TOAST": {
       const { toastId } = action;
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId);
       } else {
@@ -99,20 +97,14 @@ export const reducer = (state: State, action: Action): State => {
         ...state,
         toasts: state.toasts.map((t) =>
           t.id === toastId || toastId === undefined
-            ? {
-                ...t,
-                open: false,
-              }
+            ? { ...t, open: false }
             : t,
         ),
       };
     }
     case "REMOVE_TOAST":
       if (action.toastId === undefined) {
-        return {
-          ...state,
-          toasts: [],
-        };
+        return { ...state, toasts: [] };
       }
       return {
         ...state,
@@ -138,10 +130,7 @@ function toast({ ...props }: Toast) {
   const id = genId();
 
   const update = (props: ToasterToast) =>
-    dispatch({
-      type: "UPDATE_TOAST",
-      toast: { ...props, id },
-    });
+    dispatch({ type: "UPDATE_TOAST", toast: { ...props, id } });
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id });
 
   dispatch({
@@ -156,11 +145,7 @@ function toast({ ...props }: Toast) {
     },
   });
 
-  return {
-    id: id,
-    dismiss,
-    update,
-  };
+  return { id, dismiss, update };
 }
 
 function useToast() {

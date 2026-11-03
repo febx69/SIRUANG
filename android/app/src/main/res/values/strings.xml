@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SIRUANG</string>
+    <string name="title_activity_main">SIRUANG</string>
+    <string name="package_name">com.dinkes.pamekasan.siruang</string>
+    <string name="custom_url_scheme">com.dinkes.pamekasan.siruang</string>
+</resources>

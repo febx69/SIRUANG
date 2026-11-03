@@ -10,7 +10,12 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-apk
 *.local
+.env
+.env.*
+!.env.example
+vite.config.ts.timestamp-*
 
 # Editor directories and files
 .vscode/*

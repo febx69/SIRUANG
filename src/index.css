@@ -5,54 +5,38 @@
 
 @layer base {
   :root {
-    /* TEMA BARU: MODERN SLATE - Disesuaikan */
-    --background: 220 20% 95%; /* Latar belakang abu-abu sedikit lebih gelap */
-    --foreground: 222 47% 11%; /* Teks hitam kebiruan */
-
+    --background: 220 20% 95%;
+    --foreground: 222 47% 11%;
     --card: 220 20% 100%;
     --card-foreground: 222 47% 11%;
-
     --popover: 220 20% 100%;
     --popover-foreground: 222 47% 11%;
-
-    /* Warna utama diubah menjadi biru profesional */
-    --primary: 217 91% 60%; 
+    --primary: 222 47% 11%;
     --primary-foreground: 0 0% 100%;
-    --primary-dark: 217 91% 50%;
-
+    --primary-dark: 217 33% 17%;
     --secondary: 220 14% 96%;
     --secondary-foreground: 222 47% 11%;
-
     --muted: 220 14% 96%;
     --muted-foreground: 215 20% 65%;
-
     --accent: 220 14% 96%;
     --accent-foreground: 222 47% 11%;
-
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 217 91% 60%; /* Ring disesuaikan dengan warna primer baru */
-
-    /* Variabel lama disesuaikan untuk konsistensi */
-    --government-green: 217 91% 60%;
-    --government-green-dark: 217 91% 50%;
-    --government-green-light: 217 91% 70%;
+    --ring: 222 47% 11%;
+    --government-green: 222 47% 11%;
+    --government-green-dark: 217 33% 17%;
+    --government-green-light: 217 33% 25%;
     --government-accent: 45 93% 47%;
-    
     --gradient-primary: linear-gradient(135deg, hsl(var(--background)), hsl(var(--card)));
-    --gradient-header: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary-dark)));
-    
-    --shadow-government: 0 4px 20px -4px hsl(var(--primary) / 0.2);
-    --shadow-elevated: 0 8px 30px -8px hsl(var(--primary) / 0.25);
-
-    --radius: 0.75rem; /* Border radius sedikit lebih besar untuk kesan modern */
+    --gradient-header: linear-gradient(90deg, #0b1329, #0f172a);
+    --shadow-government: 0 4px 20px -4px rgba(15, 23, 42, 0.2);
+    --shadow-elevated: 0 8px 30px -8px rgba(15, 23, 42, 0.25);
+    --radius: 0.75rem;
   }
 
   .dark {
-    /* Dark mode disempurnakan */
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
     --card: 216 34% 17%;
@@ -76,41 +60,136 @@
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-
+  * { @apply border-border; }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-/* Menambahkan transisi halus ke elemen dengan kelas focus-visible-ring */
+/* ============================================================
+   CORPORATE MICRO-ANIMATIONS
+   ============================================================ */
+
+/* Fade + slide up */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Fade in saja */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Scale in */
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Slide in dari kiri */
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Shimmer untuk skeleton */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* Page enter animation */
+.animate-fade-in {
+  animation: fade-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Staggered children */
+.stagger-children > * {
+  opacity: 0;
+  animation: fade-up 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.stagger-children > *:nth-child(1)  { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2)  { animation-delay: 0.10s; }
+.stagger-children > *:nth-child(3)  { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4)  { animation-delay: 0.20s; }
+.stagger-children > *:nth-child(5)  { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6)  { animation-delay: 0.30s; }
+.stagger-children > *:nth-child(7)  { animation-delay: 0.35s; }
+.stagger-children > *:nth-child(8)  { animation-delay: 0.40s; }
+
+/* Card hover lift */
+.card-hover {
+  transition: transform 0.2s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px -8px rgba(59,130,246,0.2);
+}
+
+/* Button press */
+.btn-press {
+  transition: transform 0.1s ease;
+}
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* Input focus glow */
 .focus-visible-ring {
   @apply transition-all duration-200;
 }
-
-/* Menerapkan efek glow pada saat hover untuk input dan textarea */
 input.focus-visible-ring:hover,
 textarea.focus-visible-ring:hover {
   outline: none;
-  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.3);
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.25);
   border-color: hsl(var(--ring));
 }
-
-/* Untuk Select (dropdown), kita hanya ubah warna bordernya saat hover */
-.select-trigger.focus-visible-ring:hover {
-  border-color: hsl(var(--ring));
-}
-
-/* Override default focus-visible untuk input, select, textarea agar tidak double */
+input.focus-visible-ring:focus-visible,
 input[type="text"].focus-visible-ring:focus-visible,
 input[type="password"].focus-visible-ring:focus-visible,
 input[type="date"].focus-visible-ring:focus-visible,
 textarea.focus-visible-ring:focus-visible,
 .select-trigger.focus-visible-ring:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.3);
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.25);
   border-color: hsl(var(--ring));
+}
+.select-trigger.focus-visible-ring:hover {
+  border-color: hsl(var(--ring));
+}
+
+/* Skeleton shimmer */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Modal/dialog scale in */
+[data-radix-dialog-content],
+[data-radix-alert-dialog-content] {
+  animation: scale-in 0.2s cubic-bezier(0.4, 0, 0.2, 1) both !important;
+}
+
+/* Header animate */
+.animate-enter-from-bottom {
+  animation: fade-up 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Badge pulse untuk status "Akan Datang" */
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); }
+  50%       { box-shadow: 0 0 0 4px rgba(59,130,246,0); }
+}
+.badge-active {
+  animation: badge-pulse 2.5s ease-in-out infinite;
+}
+
+/* Overlay backdrop blur */
+[data-radix-dialog-overlay],
+[data-radix-alert-dialog-overlay] {
+  animation: fade-in 0.2s ease both !important;
 }
