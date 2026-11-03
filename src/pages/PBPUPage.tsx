@@ -1,9 +1,10 @@
 // src/pages/PBPUPage.tsx
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useSupabaseAuth, isUserPBPU } from '@/hooks/useSupabaseAuth';
 import { usePBPU } from '@/hooks/usePBPU';
 import Header from '@/components/Layout/Header';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -14,6 +15,7 @@ import {
   FileSpreadsheet,
   HeartHandshake,
   Building,
+  ArrowLeft,
 } from 'lucide-react';
 import { PBPUVerificationPanel } from '@/components/PBPU/PBPUVerificationPanel';
 import { PBPUSubmissionForm } from '@/components/PBPU/PBPUSubmissionForm';
@@ -23,6 +25,7 @@ import { PBPURecapExport } from '@/components/PBPU/PBPURecapExport';
 
 export const PBPUPage: React.FC = () => {
   const { user, logout, isLoading: authLoading } = useSupabaseAuth();
+  const navigate = useNavigate();
   const {
     submissions,
     isLoading: dataLoading,
@@ -62,7 +65,26 @@ export const PBPUPage: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <Header user={user} onLogout={logout} />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-8 py-6 space-y-6">
+        {/* Navigation & Header Info */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/")}
+            className="gap-2 text-xs font-semibold text-slate-600 hover:text-slate-900 self-start"
+          >
+            <ArrowLeft size={16} /> Kembali ke Beranda
+          </Button>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-slate-500">Masuk sebagai:</span>
+            <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-teal-100 text-teal-900 border border-teal-200 uppercase flex items-center gap-1.5">
+              <ShieldCheck size={13} className="text-teal-700" />
+              {user.username} ({user.username === 'yankes' ? 'Bidang Yankes' : user.role})
+            </span>
+          </div>
+        </div>
+
         {/* HEADER SECTION */}
         <div className="bg-gradient-to-r from-[#0b1329] via-[#0f243a] to-[#134e4a] p-6 sm:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="relative z-10 space-y-2 max-w-3xl">

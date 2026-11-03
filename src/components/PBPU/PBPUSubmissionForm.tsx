@@ -262,7 +262,7 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       {/* Banner Informasi Persyaratan */}
       <div className="rounded-2xl border border-teal-500/20 bg-gradient-to-r from-teal-900/10 via-emerald-900/5 to-transparent p-5 text-slate-800">
         <div className="flex items-start gap-3">
@@ -280,8 +280,10 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* KARTU 1: JALUR PENGUSULAN */}
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* KOLOM KIRI: Data Identitas & Jalur Pengusulan */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* KARTU 1: JALUR PENGUSULAN */}
         <Card className="border-slate-200 shadow-sm">
           <CardHeader className="pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2 text-primary font-bold text-sm">
@@ -588,8 +590,11 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
             </CardContent>
           </Card>
         )}
+        </div>
 
-        {/* KARTU 4: DOKUMEN PERSYARATAN WAJIB */}
+        {/* KOLOM KANAN: Dokumen Wajib, Status NIK, & Tombol Kirim */}
+        <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-6">
+          {/* KARTU 4: DOKUMEN PERSYARATAN WAJIB */}
         <Card className="border-slate-200 shadow-sm">
           <CardHeader className="pb-3 border-b border-slate-100">
             <div className="flex items-center justify-between">
@@ -886,11 +891,11 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
         )}
 
         {/* TOMBOL AKSI */}
-        <div className="flex items-center justify-end gap-3 pt-2">
+        <div className="pt-2">
           <Button
             type="submit"
             disabled={isSubmitting || !isDocsComplete}
-            className="gap-2 bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-800 hover:to-emerald-800 text-white font-bold px-6 py-2.5 h-auto shadow-md"
+            className="w-full gap-2 bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-800 hover:to-emerald-800 text-white font-bold py-3.5 h-auto text-sm shadow-md transition-all hover:shadow-lg"
           >
             {isSubmitting ? (
               <>
@@ -899,14 +904,20 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
               </>
             ) : (
               <>
-                <CheckCircle2 size={16} />
+                <CheckCircle2 size={18} />
                 <span>Kirim Usulan PBPU BP</span>
               </>
             )}
           </Button>
+          {!isDocsComplete && (
+            <p className="text-[11px] text-amber-600 text-center mt-2 font-medium">
+              * Tombol kirim akan aktif setelah dokumen wajib diunggah.
+            </p>
+          )}
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
+  </div>
   );
 };
 
