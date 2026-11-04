@@ -122,9 +122,13 @@ const Dashboard = () => {
       glowColor: "rgba(15,118,110,0.15)",
       borderHover: "rgba(15,118,110,0.3)",
       accentColor: "#0f766e",
-      title: isDukcapil ? "Pemeriksaan NIK PBPU BP" : "Pendaftaran PBPU BP",
+      title: isDukcapil
+        ? "Pemeriksaan NIK PBPU BP"
+        : isYankes
+        ? "Pendaftaran & Verifikasi PBPU BP"
+        : "Pendaftaran PBPU BP",
       desc: isYankes
-        ? "Pusat verifikasi kepesertaan PBPU BP dari Puskesmas & Dinsos, telaah syarat DPJP/SKTM/Desil, dan ekspor rekapitulasi."
+        ? "Pusat verifikasi kepesertaan PBPU BP dari Puskesmas & Dinsos, monitoring dashboard tren, penanganan NIK Dukcapil, dan ekspor data rekapitulasi."
         : isDukcapil
         ? "Pemeriksaan dan pembaruan status NIK bermasalah untuk calon peserta PBPU BP setelah penyelesaian di SIAK."
         : isDinsos
@@ -133,7 +137,7 @@ const Dashboard = () => {
         ? "Pengajuan usulan calon peserta PBPU BP jalur Puskesmas (Kondisi Khusus DPJP / SKTM) dan pantau proses verifikasi."
         : "Pendaftaran dan pemantauan usulan kepesertaan PBPU BP Pemerintah Daerah.",
       meta: isYankes
-        ? "Verifikasi Bidang Yankes"
+        ? "Verifikasi, Dashboard & Rekap"
         : isDukcapil
         ? "Tindak Lanjut NIK Dukcapil"
         : isDinsos
@@ -142,48 +146,6 @@ const Dashboard = () => {
         ? "Jalur Puskesmas"
         : "Pendaftaran & Verifikasi",
       metaIcon: ShieldCheck,
-    },
-    {
-      id: "pbpu-verifikasi",
-      path: "/pbpu-bp?tab=verifikasi",
-      icon: ShieldCheck,
-      iconBg: "rgba(15,118,110,0.08)",
-      iconColor: "#0f766e",
-      glowColor: "rgba(15,118,110,0.15)",
-      borderHover: "rgba(15,118,110,0.3)",
-      accentColor: "#0f766e",
-      title: "Verifikasi Usulan PBPU BP",
-      desc: "Telaah kelayakan berkas calon peserta yang diusulkan Puskesmas & Dinsos, putuskan persetujuan (Terima / Tolak).",
-      meta: "Verifikator Yankes",
-      metaIcon: ShieldCheck,
-    },
-    {
-      id: "pbpu-dashboard",
-      path: "/pbpu-bp?tab=dashboard",
-      icon: BarChart3,
-      iconBg: "rgba(2,132,199,0.08)",
-      iconColor: "#0284c7",
-      glowColor: "rgba(2,132,199,0.15)",
-      borderHover: "rgba(2,132,199,0.3)",
-      accentColor: "#0284c7",
-      title: "Dashboard & Tren PBPU",
-      desc: "Pantau indikator kinerja proses, sebaran usulan per Puskesmas/Kecamatan, dan tren penyelesaian NIK kependudukan.",
-      meta: "Statistik & Tren",
-      metaIcon: BarChart3,
-    },
-    {
-      id: "pbpu-rekap",
-      path: "/pbpu-bp?tab=rekap",
-      icon: FileSpreadsheet,
-      iconBg: "rgba(5,150,105,0.08)",
-      iconColor: "#059669",
-      glowColor: "rgba(5,150,105,0.15)",
-      borderHover: "rgba(5,150,105,0.3)",
-      accentColor: "#059669",
-      title: "Rekapitulasi Terverifikasi",
-      desc: "Rekap data calon peserta yang disetujui (Terverifikasi) siap diekspor ke Excel (.xlsx) dengan proteksi teks NIK.",
-      meta: "Ekspor Data BPJS",
-      metaIcon: FileSpreadsheet,
     },
   ];
 
@@ -201,16 +163,16 @@ const Dashboard = () => {
   } else if (isOB) {
     cards = allCards.filter(c => c.id === "kebersihan" || c.id === "ruangan");
   } else if (isYankes) {
-    // Akun Bidang Yankes: tampilkan 3 kartu utama PBPU (Verifikasi, Dashboard & Tren, Rekapitulasi)
-    const yankesPbpuCards = allCards.filter(c => c.id.startsWith("pbpu-"));
-    const dinkesCards = allCards.filter(c => !c.id.startsWith("pbpu") && c.id !== "shs");
-    cards = [...yankesPbpuCards, ...dinkesCards];
+    // Akun Bidang Yankes: cukup 1 kartu PBPU BP di urutan pertama (Tanpa kartu SHS)
+    const pbpuCard = allCards.find(c => c.id === "pbpu");
+    const dinkesCards = allCards.filter(c => c.id !== "pbpu" && c.id !== "shs");
+    cards = pbpuCard ? [pbpuCard, ...dinkesCards] : dinkesCards;
   } else if (isAdmin) {
     // Administrator: seluruh kartu
     cards = allCards;
   } else {
     // Akun Bidang lain (SDK, Kesmas, P2P, Sekretariat, dll): Layanan internal Dinkes (TANPA PBPU BP dan TANPA SHS)
-    cards = allCards.filter(c => !c.id.startsWith("pbpu") && c.id !== "shs");
+    cards = allCards.filter(c => c.id !== "pbpu" && c.id !== "shs");
   }
 
   return (
@@ -289,32 +251,14 @@ const Dashboard = () => {
               </p>
             </div>
 
-            <div className="relative z-10 flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+            <div className="relative z-10 shrink-0">
               <button
                 type="button"
-                onClick={() => navigate("/pbpu-bp?tab=verifikasi")}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-teal-500/25 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                onClick={() => navigate("/pbpu-bp")}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
-                <ShieldCheck size={16} />
-                <span>Verifikasi Usulan</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate("/pbpu-bp?tab=dashboard")}
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs flex items-center gap-2 backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
-              >
-                <BarChart3 size={16} />
-                <span>Dashboard & Tren</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate("/pbpu-bp?tab=rekap")}
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs flex items-center gap-2 backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
-              >
-                <FileSpreadsheet size={16} />
-                <span>Unduh Rekap</span>
+                <span>Buka Modul PBPU BP</span>
+                <ChevronRight size={16} />
               </button>
             </div>
 
