@@ -1,5 +1,5 @@
 // src/components/PBPU/PBPUSubmissionForm.tsx
-import React, { useState, useId } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,9 +25,13 @@ import {
   FileSpreadsheet,
   X,
   FileCheck,
+  RotateCcw,
+  AlertTriangle,
+  XCircle,
 } from 'lucide-react';
 import { User } from '@/hooks/useSupabaseAuth';
 import {
+  PBPUSubmission,
   PBPUSubmissionPayload,
   PBPUSubmissionChannel,
   PBPUNikStatus,
@@ -43,6 +47,13 @@ interface PBPUSubmissionFormProps {
   onSubmit: (payload: PBPUSubmissionPayload) => Promise<{ success: boolean; regNo?: string; error?: string }>;
   isSubmitting: boolean;
   onSuccessNavigate?: () => void;
+  editSubmission?: PBPUSubmission | null;
+  onCancelEdit?: () => void;
+  onResubmit?: (
+    submissionId: string,
+    payload: PBPUSubmissionPayload,
+    revisionNote?: string
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 interface UploadedDocState {
@@ -58,6 +69,9 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
   onSubmit,
   isSubmitting,
   onSuccessNavigate,
+  editSubmission,
+  onCancelEdit,
+  onResubmit,
 }) => {
   const uname = (user?.username || '').toLowerCase();
   const isPuskesmasUser = user?.role === 'puskesmas' || uname.startsWith('puskesmas') || uname.startsWith('pkm_');
@@ -109,6 +123,43 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
   // Dokumen Terunggah
   const [documents, setDocuments] = useState<UploadedDocState[]>([]);
   const [uploadError, setUploadError] = useState('');
+
+  // Sinkronisasi data saat editSubmission aktif (Mode Perbaikan Berkas Ditolak)
+  useEffect(() => {
+    if (editSubmission) {
+      setApplicantName(editSubmission.applicant_name || '');
+      setNik(editSubmission.nik || '');
+      setNoKk(editSubmission.no_kk || '');
+      setBirthPlace(editSubmission.birth_place || '');
+      setBirthDate(editSubmission.birth_date || '');
+      setGender(editSubmission.gender || 'Laki-laki');
+      setAddress(editSubmission.address || '');
+      setVillage(editSubmission.village || '');
+      setDistrict(editSubmission.district || PAMEKASAN_DISTRICTS[0]);
+      setPhone(editSubmission.phone || '');
+      setChannel(editSubmission.submission_channel);
+      setSubmitterUnit(editSubmission.submitter_unit);
+      setConditionCategory(editSubmission.condition_category || PUSKESMAS_CONDITION_CATEGORIES[0]);
+      setHealthFacility(editSubmission.health_facility || '');
+      setDpjpName(editSubmission.dpjp_name || '');
+      setDesil(editSubmission.desil || 1);
+      setNikStatus(editSubmission.nik_status || 'TIDAK_BERMASALAH');
+      setNotes(editSubmission.notes || '');
+
+      // Load dokumen lama yang telah diunggah sebelumnya
+      if (editSubmission.documents && editSubmission.documents.length > 0) {
+        setDocuments(
+          editSubmission.documents.map((d) => ({
+            document_type: d.document_type,
+            file_name: d.file_name,
+            file_url: d.file_url,
+            file_size: d.file_size,
+            mime_type: d.mime_type,
+          }))
+        );
+      }
+    }
+  }, [editSubmission]);
 
   // File upload handler
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, docType: PBPUDocumentType) => {
@@ -241,6 +292,28 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
       attachedDocuments: documents,
     };
 
+    if (editSubmission && onResubmit) {
+      const result = await onResubmit(editSubmission.id, payload, notes.trim());
+      if (result.success) {
+        setApplicantName('');
+        setNik('');
+        setNoKk('');
+        setBirthPlace('');
+        setBirthDate('');
+        setAddress('');
+        setVillage('');
+        setPhone('');
+        setHealthFacility('');
+        setDpjpName('');
+        setNotes('');
+        setDocuments([]);
+        if (onSuccessNavigate) {
+          onSuccessNavigate();
+        }
+      }
+      return;
+    }
+
     const result = await onSubmit(payload);
     if (result.success) {
       // Reset form
@@ -264,22 +337,74 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
 
   return (
     <div className="w-full space-y-6">
-      {/* Banner Informasi Persyaratan */}
-      <div className="rounded-2xl border border-teal-500/20 bg-gradient-to-r from-teal-900/10 via-emerald-900/5 to-transparent p-5 text-slate-800">
-        <div className="flex items-start gap-3">
-          <div className="p-2 rounded-xl bg-teal-600 text-white shadow-sm mt-0.5">
-            <HeartPulse size={20} />
+      {/* Banner Informasi Persyaratan / Banner Mode Perbaikan */}
+      {editSubmission ? (
+        <div className="rounded-2xl border-2 border-amber-300 bg-amber-50/90 p-5 text-amber-950 shadow-sm space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-500 text-slate-950 shadow-sm mt-0.5 font-bold">
+                <AlertTriangle size={22} />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 font-extrabold text-[11px] uppercase tracking-wide">
+                    Mode Perbaikan Usulan
+                  </span>
+                  <span className="font-mono font-bold text-xs bg-white px-2 py-0.5 rounded border border-amber-200">
+                    {editSubmission.registration_no}
+                  </span>
+                </div>
+                <h3 className="font-black text-amber-950 text-base">
+                  Perbaiki Berkas: {editSubmission.applicant_name}
+                </h3>
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  Usulan ini sebelumnya ditolak oleh Bidang Pelayanan Kesehatan Dinkes. Data lama telah dimuat otomatis ke formulir di bawah. Silakan periksa kembali dan unggah dokumen pengganti sesuai alasan penolakan.
+                </p>
+              </div>
+            </div>
+
+            {onCancelEdit && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onCancelEdit}
+                className="border-amber-300 text-amber-900 hover:bg-amber-100 text-xs font-bold shrink-0 cursor-pointer"
+              >
+                Batal Perbaikan (Input Baru)
+              </Button>
+            )}
           </div>
-          <div className="space-y-1">
-            <h3 className="font-bold text-slate-900 text-base">
-              Formulir Pendaftaran Calon Peserta PBPU BP
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Pendaftaran peserta Pekerja Bukan Penerima Upah dan Bukan Pekerja (PBPU BP) yang didaftarkan Pemerintah Daerah (Dinas Kesehatan Kab. Pamekasan). Usulan akan diverifikasi oleh Tim Bidang Yankes Dinkes.
-            </p>
+
+          {editSubmission.rejection_reason && (
+            <div className="p-3.5 bg-white rounded-xl border border-rose-200 text-xs space-y-1">
+              <span className="font-bold text-rose-700 uppercase tracking-wide text-[11px] flex items-center gap-1.5">
+                <XCircle size={14} className="text-rose-600" />
+                Alasan Penolakan dari Bidang Yankes Dinkes:
+              </span>
+              <p className="font-black text-slate-900 pl-5 text-sm whitespace-pre-wrap">
+                "{editSubmission.rejection_reason}"
+              </p>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-teal-500/20 bg-gradient-to-r from-teal-900/10 via-emerald-900/5 to-transparent p-5 text-slate-800">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-teal-600 text-white shadow-sm mt-0.5">
+              <HeartPulse size={20} />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-bold text-slate-900 text-base">
+                Formulir Pendaftaran Calon Peserta PBPU BP
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Pendaftaran peserta Pekerja Bukan Penerima Upah dan Bukan Pekerja (PBPU BP) yang didaftarkan Pemerintah Daerah (Dinas Kesehatan Kab. Pamekasan). Usulan akan diverifikasi oleh Tim Bidang Yankes Dinkes.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* KOLOM KIRI: Data Identitas & Jalur Pengusulan */}
@@ -903,12 +1028,21 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
           <Button
             type="submit"
             disabled={isSubmitting || !isDocsComplete}
-            className="w-full gap-2 bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-800 hover:to-emerald-800 text-white font-bold py-3.5 h-auto text-sm shadow-md transition-all hover:shadow-lg"
+            className={`w-full gap-2 font-bold py-3.5 h-auto text-sm shadow-md transition-all hover:shadow-lg cursor-pointer ${
+              editSubmission
+                ? 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white'
+                : 'bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-800 hover:to-emerald-800 text-white'
+            }`}
           >
             {isSubmitting ? (
               <>
                 <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Mengirim Usulan...</span>
+                <span>{editSubmission ? 'Mengirim Ulang Berkas Perbaikan...' : 'Mengirim Usulan...'}</span>
+              </>
+            ) : editSubmission ? (
+              <>
+                <RotateCcw size={18} />
+                <span>Kirim Ulang Usulan Perbaikan (Ajukan Ulang ke Yankes)</span>
               </>
             ) : (
               <>

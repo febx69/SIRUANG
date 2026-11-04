@@ -37,6 +37,7 @@ export const PBPUPage: React.FC = () => {
     isSubmitting,
     stats,
     submitNewApplication,
+    resubmitApplication,
     verifySubmission,
     updateNikStatus,
   } = usePBPU(user);
@@ -49,6 +50,9 @@ export const PBPUPage: React.FC = () => {
   const isDukcapil = user?.role === 'dukcapil' || uname === 'dukcapil';
   const isPengusul = isPuskesmas || isDinsos;
   const isVerifier = isYankes || isAdmin;
+
+  // State untuk menangani usulan yang ditolak dan sedang diperbaiki oleh pengusul
+  const [editingSubmission, setEditingSubmission] = useState<any | null>(null);
 
   // Tab awal: baca query param ?tab= atau gunakan default per peran
   const queryTab = searchParams.get('tab');
@@ -375,7 +379,12 @@ export const PBPUPage: React.FC = () => {
                     className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
                   >
                     <FilePlus size={16} />
-                    <span>Input Pengajuan Baru</span>
+                    <span>{editingSubmission ? 'Perbaikan Usulan' : 'Input Pengajuan Baru'}</span>
+                    {editingSubmission && (
+                      <Badge className="ml-1 bg-amber-400 text-amber-950 text-[10px] px-1.5 py-0 h-4">
+                        Revisi
+                      </Badge>
+                    )}
                   </TabsTrigger>
                 </>
               ) : isPengusul ? (
@@ -386,7 +395,12 @@ export const PBPUPage: React.FC = () => {
                     className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
                   >
                     <FilePlus size={16} />
-                    <span>Form Pengajuan Baru</span>
+                    <span>{editingSubmission ? 'Perbaikan Usulan' : 'Form Pengajuan Baru'}</span>
+                    {editingSubmission && (
+                      <Badge className="ml-1 bg-amber-400 text-amber-950 text-[10px] px-1.5 py-0 h-4">
+                        Revisi
+                      </Badge>
+                    )}
                   </TabsTrigger>
 
                   <TabsTrigger
@@ -484,14 +498,20 @@ export const PBPUPage: React.FC = () => {
             />
           </TabsContent>
 
-          {/* === CONTENT 5: FORM PENGAJUAN BARU === */}
+          {/* === CONTENT 5: FORM PENGAJUAN BARU / PERBAIKAN BERKAS === */}
           {!isDukcapil && (
             <TabsContent value="form" className="mt-0 focus-visible:outline-none">
               <PBPUSubmissionForm
                 user={user}
                 onSubmit={submitNewApplication}
+                editSubmission={editingSubmission}
+                onCancelEdit={() => setEditingSubmission(null)}
+                onResubmit={resubmitApplication}
                 isSubmitting={isSubmitting}
-                onSuccessNavigate={() => handleTabChange(isPengusul ? 'riwayat' : 'verifikasi')}
+                onSuccessNavigate={() => {
+                  setEditingSubmission(null);
+                  handleTabChange(isPengusul ? 'riwayat' : 'verifikasi');
+                }}
               />
             </TabsContent>
           )}
@@ -507,6 +527,10 @@ export const PBPUPage: React.FC = () => {
                 isReadOnly={true}
                 panelTitle="Riwayat Usulan Unit Saya"
                 panelSubtitle="Daftar seluruh usulan calon peserta PBPU BP yang diajukan oleh unit Anda beserta status telaah dari Bidang Yankes Dinas Kesehatan."
+                onEditSubmission={(sub) => {
+                  setEditingSubmission(sub);
+                  handleTabChange('form');
+                }}
               />
             </TabsContent>
           )}

@@ -46,6 +46,8 @@ import {
   History,
   Check,
   X,
+  RotateCcw,
+  AlertTriangle,
 } from 'lucide-react';
 import { PBPUDocumentViewerModal } from './PBPUDocumentViewerModal';
 
@@ -61,6 +63,7 @@ interface PBPUVerificationPanelProps {
   isReadOnly?: boolean;
   panelTitle?: string;
   panelSubtitle?: string;
+  onEditSubmission?: (submission: PBPUSubmission) => void;
 }
 
 export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
@@ -71,6 +74,7 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
   isReadOnly = false,
   panelTitle,
   panelSubtitle,
+  onEditSubmission,
 }) => {
   const uname = (user?.username || '').toLowerCase();
   const isYankes = uname === 'yankes';
@@ -367,17 +371,32 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
                       </td>
 
                       <td className="py-3.5 px-4 text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedSubmission(sub);
-                          }}
-                          className="h-8 text-xs font-bold text-teal-800 hover:text-teal-900 border-teal-200 hover:bg-teal-50 gap-1"
-                        >
-                          Telaah
-                        </Button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          {isReadOnly && sub.verification_status === 'DITOLAK' && onEditSubmission && (
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEditSubmission(sub);
+                              }}
+                              className="h-8 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 gap-1 shadow-sm"
+                            >
+                              <RotateCcw size={13} />
+                              Perbaiki
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedSubmission(sub);
+                            }}
+                            className="h-8 text-xs font-bold text-teal-800 hover:text-teal-900 border-teal-200 hover:bg-teal-50 gap-1"
+                          >
+                            Telaah
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -412,6 +431,72 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
               </DialogHeader>
 
               <div className="flex-1 overflow-y-auto py-4 space-y-6 pr-1">
+                {/* BANNER NOTIFIKASI JIKA STATUS DITOLAK */}
+                {selectedSubmission.verification_status === 'DITOLAK' && (
+                  <div className="p-4 rounded-2xl border-2 border-rose-300 bg-rose-50/90 text-rose-950 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div className="flex items-start gap-2.5">
+                        <XCircle size={22} className="text-rose-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-black text-rose-950 text-sm uppercase tracking-wide">
+                            Usulan Ditolak oleh Bidang Pelayanan Kesehatan Dinkes
+                          </p>
+                          <p className="text-xs text-rose-800 mt-0.5">
+                            Ditolak pada: {selectedSubmission.verified_at ? new Date(selectedSubmission.verified_at).toLocaleString('id-ID') : '-'}
+                            {selectedSubmission.verifier_username ? ` oleh ${selectedSubmission.verifier_username}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      {isReadOnly && onEditSubmission && (
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const target = selectedSubmission;
+                            setSelectedSubmission(null);
+                            onEditSubmission(target);
+                          }}
+                          className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs gap-1.5 shadow-md shrink-0 cursor-pointer"
+                        >
+                          <RotateCcw size={14} />
+                          Perbaiki & Ajukan Ulang
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="p-3 bg-white/90 rounded-xl border border-rose-200 text-xs">
+                      <span className="font-bold text-rose-900 block mb-1">Alasan Penolakan dari Dinkes:</span>
+                      <p className="font-extrabold text-slate-900 text-sm whitespace-pre-wrap">
+                        {selectedSubmission.rejection_reason || 'Berkas persyaratan tidak lengkap atau tidak sesuai ketentuan.'}
+                      </p>
+                    </div>
+
+                    {isReadOnly && (
+                      <p className="text-[11px] text-rose-800 italic">
+                        💡 Klik tombol <strong>"Perbaiki & Ajukan Ulang"</strong> untuk memperbarui data pemohon atau mengunggah ulang dokumen pengganti tanpa harus mengisi ulang dari formulir kosong.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* BANNER NOTIFIKASI JIKA STATUS MENUNGGU DAN PERNAH DIAJUKAN ULANG */}
+                {selectedSubmission.verification_status === 'MENUNGGU' &&
+                  selectedSubmission.status_history?.some((h) => h.old_status === 'DITOLAK') && (
+                    <div className="p-3.5 rounded-xl border border-amber-300 bg-amber-50/80 text-amber-950 text-xs flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle size={18} className="text-amber-600 shrink-0" />
+                        <div>
+                          <p className="font-bold text-amber-950">Usulan Hasil Perbaikan Berkas</p>
+                          <p className="text-[11px] text-amber-800">
+                            Usulan ini sebelumnya pernah ditolak, kemudian telah diperbaiki dan diajukan ulang oleh pengusul. Silakan periksa kembali kelengkapan dokumen terbaru.
+                          </p>
+                        </div>
+                      </div>
+                      <Badge className="bg-amber-200 text-amber-900 border-amber-300 text-[10px] shrink-0 font-extrabold">
+                        Usulan Revisi
+                      </Badge>
+                    </div>
+                  )}
+
                 {/* 1. INFORMASI CALON PESERTA */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/70 p-4 rounded-xl border border-slate-200/80">
                   <div className="space-y-2 text-xs">
