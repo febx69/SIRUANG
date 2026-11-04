@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useSupabaseAuth, isUserOB, isUserPBPU } from "@/hooks/useSupabaseAuth";
 import Header from "@/components/Layout/Header";
-import { Building2, Video, Car, ChevronRight, Users, Calendar, Sparkles, Laptop, FileSpreadsheet, HeartHandshake, ShieldCheck } from "lucide-react";
+import { Building2, Video, Car, ChevronRight, Users, Calendar, Sparkles, Laptop, FileSpreadsheet, HeartHandshake, ShieldCheck, BarChart3 } from "lucide-react";
 
 const Dashboard = () => {
   const { user, logout, isLoading } = useSupabaseAuth();
@@ -143,6 +143,48 @@ const Dashboard = () => {
         : "Pendaftaran & Verifikasi",
       metaIcon: ShieldCheck,
     },
+    {
+      id: "pbpu-verifikasi",
+      path: "/pbpu-bp?tab=verifikasi",
+      icon: ShieldCheck,
+      iconBg: "rgba(15,118,110,0.08)",
+      iconColor: "#0f766e",
+      glowColor: "rgba(15,118,110,0.15)",
+      borderHover: "rgba(15,118,110,0.3)",
+      accentColor: "#0f766e",
+      title: "Verifikasi Usulan PBPU BP",
+      desc: "Telaah kelayakan berkas calon peserta yang diusulkan Puskesmas & Dinsos, putuskan persetujuan (Terima / Tolak).",
+      meta: "Verifikator Yankes",
+      metaIcon: ShieldCheck,
+    },
+    {
+      id: "pbpu-dashboard",
+      path: "/pbpu-bp?tab=dashboard",
+      icon: BarChart3,
+      iconBg: "rgba(2,132,199,0.08)",
+      iconColor: "#0284c7",
+      glowColor: "rgba(2,132,199,0.15)",
+      borderHover: "rgba(2,132,199,0.3)",
+      accentColor: "#0284c7",
+      title: "Dashboard & Tren PBPU",
+      desc: "Pantau indikator kinerja proses, sebaran usulan per Puskesmas/Kecamatan, dan tren penyelesaian NIK kependudukan.",
+      meta: "Statistik & Tren",
+      metaIcon: BarChart3,
+    },
+    {
+      id: "pbpu-rekap",
+      path: "/pbpu-bp?tab=rekap",
+      icon: FileSpreadsheet,
+      iconBg: "rgba(5,150,105,0.08)",
+      iconColor: "#059669",
+      glowColor: "rgba(5,150,105,0.15)",
+      borderHover: "rgba(5,150,105,0.3)",
+      accentColor: "#059669",
+      title: "Rekapitulasi Terverifikasi",
+      desc: "Rekap data calon peserta yang disetujui (Terverifikasi) siap diekspor ke Excel (.xlsx) dengan proteksi teks NIK.",
+      meta: "Ekspor Data BPJS",
+      metaIcon: FileSpreadsheet,
+    },
   ];
 
   // Pemetaan kartu berdasarkan peran
@@ -159,16 +201,16 @@ const Dashboard = () => {
   } else if (isOB) {
     cards = allCards.filter(c => c.id === "kebersihan" || c.id === "ruangan");
   } else if (isYankes) {
-    // Akun Bidang Yankes: tampilkan PBPU BP di urutan pertama (Tanpa kartu SHS)
-    const pbpuCard = allCards.find(c => c.id === "pbpu");
-    const dinkesCards = allCards.filter(c => c.id !== "pbpu" && c.id !== "shs");
-    cards = pbpuCard ? [pbpuCard, ...dinkesCards] : dinkesCards;
+    // Akun Bidang Yankes: tampilkan 3 kartu utama PBPU (Verifikasi, Dashboard & Tren, Rekapitulasi)
+    const yankesPbpuCards = allCards.filter(c => c.id.startsWith("pbpu-"));
+    const dinkesCards = allCards.filter(c => !c.id.startsWith("pbpu") && c.id !== "shs");
+    cards = [...yankesPbpuCards, ...dinkesCards];
   } else if (isAdmin) {
     // Administrator: seluruh kartu
     cards = allCards;
   } else {
     // Akun Bidang lain (SDK, Kesmas, P2P, Sekretariat, dll): Layanan internal Dinkes (TANPA PBPU BP dan TANPA SHS)
-    cards = allCards.filter(c => c.id !== "pbpu" && c.id !== "shs");
+    cards = allCards.filter(c => !c.id.startsWith("pbpu") && c.id !== "shs");
   }
 
   return (
@@ -230,9 +272,9 @@ const Dashboard = () => {
         {/* BANNER KHUSUS BIDANG YANKES */}
         {user?.username === "yankes" && (
           <div
-            className="mb-8 p-6 rounded-2xl border border-teal-500/30 bg-gradient-to-r from-[#0b1329] via-[#0f243a] to-[#134e4a] text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4 animate-enter-from-bottom"
+            className="mb-8 p-6 rounded-2xl border border-teal-500/30 bg-gradient-to-r from-[#0b1329] via-[#0f243a] to-[#134e4a] text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 animate-enter-from-bottom"
           >
-            <div className="relative z-10 space-y-1.5">
+            <div className="relative z-10 space-y-1.5 max-w-xl">
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-full bg-teal-400 text-slate-900 font-extrabold text-[10px] tracking-wider uppercase">
                   Menu Utama Yankes
@@ -240,19 +282,41 @@ const Dashboard = () => {
                 <span className="text-teal-200 text-xs font-semibold">Bidang Pelayanan Kesehatan</span>
               </div>
               <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                Pusat Verifikasi Pendaftaran PBPU BP
+                Pusat Verifikasi, Dashboard & Rekap PBPU BP
               </h3>
-              <p className="text-xs sm:text-sm text-slate-200 max-w-2xl leading-relaxed">
-                Kelola telaah usulan calon peserta PBPU BP dari Puskesmas dan Dinas Sosial, pemeriksaan syarat dokumen, koordinasi status NIK Dukcapil, serta unduh rekap terverifikasi resmi.
+              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                Kelola telaah usulan calon peserta PBPU BP dari Puskesmas dan Dinas Sosial, pantau analisis tren wilayah & capaian, serta ekspor rekapitulasi data terverifikasi resmi untuk BPJS Kesehatan.
               </p>
             </div>
-            <button
-              onClick={() => navigate("/pbpu-bp")}
-              className="relative z-10 w-full md:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
-            >
-              <span>Buka Modul PBPU BP</span>
-              <ChevronRight size={16} />
-            </button>
+
+            <div className="relative z-10 flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => navigate("/pbpu-bp?tab=verifikasi")}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-teal-500/25 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <ShieldCheck size={16} />
+                <span>Verifikasi Usulan</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate("/pbpu-bp?tab=dashboard")}
+                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs flex items-center gap-2 backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <BarChart3 size={16} />
+                <span>Dashboard & Tren</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate("/pbpu-bp?tab=rekap")}
+                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs flex items-center gap-2 backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <FileSpreadsheet size={16} />
+                <span>Unduh Rekap</span>
+              </button>
+            </div>
 
             {/* Subtle glow background */}
             <div className="absolute right-0 top-0 bottom-0 w-80 bg-teal-500/10 blur-3xl pointer-events-none" />

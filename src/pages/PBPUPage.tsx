@@ -1,6 +1,6 @@
 // src/pages/PBPUPage.tsx
-import React, { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSupabaseAuth, isUserPBPU } from '@/hooks/useSupabaseAuth';
 import { usePBPU } from '@/hooks/usePBPU';
 import Header from '@/components/Layout/Header';
@@ -17,7 +17,9 @@ import {
   Building,
   ArrowLeft,
   History,
-  FileCheck,
+  FileText,
+  Clock,
+  TrendingUp,
 } from 'lucide-react';
 import { PBPUVerificationPanel } from '@/components/PBPU/PBPUVerificationPanel';
 import { PBPUSubmissionForm } from '@/components/PBPU/PBPUSubmissionForm';
@@ -28,6 +30,7 @@ import { PBPURecapExport } from '@/components/PBPU/PBPURecapExport';
 export const PBPUPage: React.FC = () => {
   const { user, logout, isLoading: authLoading } = useSupabaseAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     submissions,
     isLoading: dataLoading,
@@ -47,12 +50,21 @@ export const PBPUPage: React.FC = () => {
   const isPengusul = isPuskesmas || isDinsos;
   const isVerifier = isYankes || isAdmin;
 
-  // Default active tab based on role:
-  // - Verifikator (Yankes & Admin): 'verifikasi'
-  // - Pengusul (Puskesmas & Dinsos): 'form'
-  // - Pemeriksa NIK (Dukcapil): 'dukcapil'
-  const defaultTab = isDukcapil ? 'dukcapil' : isPengusul ? 'form' : 'verifikasi';
+  // Tab awal: baca query param ?tab= atau gunakan default per peran
+  const queryTab = searchParams.get('tab');
+  const defaultTab = queryTab || (isDukcapil ? 'dukcapil' : isPengusul ? 'form' : 'verifikasi');
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
+
+  useEffect(() => {
+    if (queryTab && queryTab !== activeTab) {
+      setActiveTab(queryTab);
+    }
+  }, [queryTab]);
+
+  const handleTabChange = (val: string) => {
+    setActiveTab(val);
+    setSearchParams({ tab: val });
+  };
 
   // Filter usulan unit untuk Pengusul (Puskesmas & Dinsos)
   const unitSubmissions = React.useMemo(() => {
@@ -156,7 +168,7 @@ export const PBPUPage: React.FC = () => {
 
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
               {isYankes
-                ? 'Pusat Verifikasi Pendaftaran PBPU BP'
+                ? 'Pusat Verifikasi, Dashboard & Rekap PBPU BP'
                 : isDukcapil
                 ? 'Pemeriksaan & Tindak Lanjut NIK PBPU BP'
                 : isDinsos
@@ -168,7 +180,7 @@ export const PBPUPage: React.FC = () => {
 
             <p className="text-xs sm:text-sm text-slate-200/90 leading-relaxed">
               {isYankes
-                ? 'Pusat verifikasi dan telaah berkas calon peserta PBPU BP dari Puskesmas & Dinas Sosial. Putuskan persetujuan (Terima / Tolak dengan alasan wajib) dan koordinasikan data kependudukan dengan Dukcapil.'
+                ? 'Pusat operasional verifikasi usulan kepesertaan PBPU BP dari Puskesmas & Dinsos, monitoring dasbor indikator dan tren wilayah, serta pengunduhan rekapitulasi data terverifikasi resmi untuk pendaftaran ke BPJS Kesehatan.'
                 : isDukcapil
                 ? 'Portal pemeriksaan dan pemutakhiran status NIK calon peserta PBPU BP yang dilaporkan bermasalah di database kependudukan. Ubah status menjadi Selesai/Valid setelah perbaikan di SIAK.'
                 : isDinsos
@@ -200,116 +212,237 @@ export const PBPUPage: React.FC = () => {
           </div>
         </div>
 
+        {/* STRIP RINGKASAN KPI YANKES & ADMIN */}
+        {isVerifier && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <button
+              type="button"
+              onClick={() => handleTabChange('verifikasi')}
+              className={`text-left p-4 rounded-2xl bg-white border transition-all shadow-sm hover:shadow-md cursor-pointer ${
+                activeTab === 'verifikasi'
+                  ? 'border-teal-600 ring-2 ring-teal-500/20'
+                  : 'border-slate-200/90 hover:border-slate-300'
+              }`}
+            >
+              <div className="flex items-center justify-between text-slate-500">
+                <span className="text-[11px] font-bold uppercase tracking-wider">Total Masuk</span>
+                <FileText size={16} className="text-slate-400" />
+              </div>
+              <p className="text-2xl font-black text-slate-800 tracking-tight mt-1">{stats.total}</p>
+              <p className="text-[10px] text-slate-400">Seluruh pendaftaran</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleTabChange('verifikasi')}
+              className={`text-left p-4 rounded-2xl bg-amber-50/70 border transition-all shadow-sm hover:shadow-md cursor-pointer ${
+                activeTab === 'verifikasi'
+                  ? 'border-amber-500 ring-2 ring-amber-500/20'
+                  : 'border-amber-200/80 hover:border-amber-300'
+              }`}
+            >
+              <div className="flex items-center justify-between text-amber-700">
+                <span className="text-[11px] font-bold uppercase tracking-wider">Menunggu Telaah</span>
+                <Clock size={16} className="text-amber-600" />
+              </div>
+              <p className="text-2xl font-black text-amber-900 tracking-tight mt-1">{stats.menunggu}</p>
+              <p className="text-[10px] text-amber-700">Antrean keputusan Yankes</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleTabChange('rekap')}
+              className={`text-left p-4 rounded-2xl bg-emerald-50/70 border transition-all shadow-sm hover:shadow-md cursor-pointer ${
+                activeTab === 'rekap'
+                  ? 'border-emerald-600 ring-2 ring-emerald-500/20'
+                  : 'border-emerald-200/80 hover:border-emerald-300'
+              }`}
+            >
+              <div className="flex items-center justify-between text-emerald-700">
+                <span className="text-[11px] font-bold uppercase tracking-wider">Terverifikasi</span>
+                <FileSpreadsheet size={16} className="text-emerald-600" />
+              </div>
+              <p className="text-2xl font-black text-emerald-900 tracking-tight mt-1">{stats.terverifikasi}</p>
+              <p className="text-[10px] text-emerald-700">Siap diekspor ke BPJS</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleTabChange('dashboard')}
+              className={`text-left p-4 rounded-2xl bg-teal-50/70 border transition-all shadow-sm hover:shadow-md cursor-pointer ${
+                activeTab === 'dashboard'
+                  ? 'border-teal-600 ring-2 ring-teal-500/20'
+                  : 'border-teal-200/80 hover:border-teal-300'
+              }`}
+            >
+              <div className="flex items-center justify-between text-teal-700">
+                <span className="text-[11px] font-bold uppercase tracking-wider">Dashboard & Tren</span>
+                <BarChart3 size={16} className="text-teal-600" />
+              </div>
+              <p className="text-lg font-black text-teal-950 tracking-tight mt-1.5">
+                {stats.jalurPuskesmas} <span className="text-xs font-semibold text-slate-500">PKM</span> / {stats.jalurDinsos} <span className="text-xs font-semibold text-slate-500">DS</span>
+              </p>
+              <p className="text-[10px] text-teal-700">Grafik & distribusi wilayah</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleTabChange('dukcapil')}
+              className={`text-left p-4 rounded-2xl bg-rose-50/70 border transition-all shadow-sm hover:shadow-md cursor-pointer ${
+                activeTab === 'dukcapil'
+                  ? 'border-rose-500 ring-2 ring-rose-500/20'
+                  : 'border-rose-200/80 hover:border-rose-300'
+              }`}
+            >
+              <div className="flex items-center justify-between text-rose-700">
+                <span className="text-[11px] font-bold uppercase tracking-wider">NIK Bermasalah</span>
+                <AlertCircle size={16} className="text-rose-600" />
+              </div>
+              <p className="text-2xl font-black text-rose-900 tracking-tight mt-1">{stats.nikBermasalah}</p>
+              <p className="text-[10px] text-rose-700">Antrean koordinasi Dukcapil</p>
+            </button>
+          </div>
+        )}
+
         {/* TABS NAVIGATION PERSONA-BASED */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <div className="overflow-x-auto pb-1">
             <TabsList className="bg-white border border-slate-200/80 p-1.5 rounded-2xl shadow-sm inline-flex h-auto gap-1">
               
-              {/* === TAB 1: VERIFIKASI (Khusus Verifikator Yankes & Admin) === */}
-              {isVerifier && (
-                <TabsTrigger
-                  value="verifikasi"
-                  className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
-                >
-                  <ShieldCheck size={16} />
-                  <span>Verifikasi Usulan</span>
-                  {stats.menunggu > 0 && (
-                    <Badge
-                      className="ml-1 bg-amber-400 text-slate-900 font-extrabold text-[10px] px-1.5 py-0 h-4 min-w-4 flex items-center justify-center rounded-full"
-                    >
-                      {stats.menunggu}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-              )}
-
-              {/* === TAB 2: FORM PENGAJUAN BARU (Pengusul & Verifikator) === */}
-              {!isDukcapil && (
-                <TabsTrigger
-                  value="form"
-                  className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
-                >
-                  <FilePlus size={16} />
-                  <span>Pengajuan Baru</span>
-                </TabsTrigger>
-              )}
-
-              {/* === TAB 3: RIWAYAT USULAN UNIT SAYA (Khusus Pengusul: Puskesmas & Dinsos) === */}
-              {isPengusul && (
-                <TabsTrigger
-                  value="riwayat"
-                  className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
-                >
-                  <History size={16} />
-                  <span>Riwayat Usulan Unit Saya</span>
-                  <Badge
-                    className="ml-1 bg-slate-100 text-slate-700 font-extrabold text-[10px] px-1.5 py-0 h-4 min-w-4 flex items-center justify-center rounded-full"
+              {/* === VERIFIKATOR YANKES & ADMIN === */}
+              {isVerifier ? (
+                <>
+                  {/* TAB 1: VERIFIKASI USULAN */}
+                  <TabsTrigger
+                    value="verifikasi"
+                    className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
                   >
-                    {unitSubmissions.length}
-                  </Badge>
-                </TabsTrigger>
-              )}
+                    <ShieldCheck size={16} />
+                    <span>Verifikasi Usulan</span>
+                    {stats.menunggu > 0 && (
+                      <Badge
+                        className="ml-1 bg-amber-400 text-slate-900 font-extrabold text-[10px] px-1.5 py-0 h-4 min-w-4 flex items-center justify-center rounded-full"
+                      >
+                        {stats.menunggu}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
 
-              {/* === TAB 4: NIK DUKCAPIL === */}
-              {/* Dukcapil: Tab utama pemeriksaan NIK; Yankes: Tab antrean NIK; Pengusul: Pantauan NIK usulan */}
-              <TabsTrigger
-                value="dukcapil"
-                className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
-              >
-                <AlertCircle size={16} />
-                <span>
-                  {isDukcapil
-                    ? 'Antrean NIK Bermasalah'
-                    : isPengusul
-                    ? 'Status NIK Bermasalah Unit'
-                    : 'Antrean NIK Dukcapil'}
-                </span>
-                {isPengusul ? (
-                  unitNikBermasalahCount > 0 && (
-                    <Badge
-                      className="ml-1 bg-rose-500 text-white font-extrabold text-[10px] px-1.5 py-0 h-4 min-w-4 flex items-center justify-center rounded-full"
-                    >
-                      {unitNikBermasalahCount}
-                    </Badge>
-                  )
-                ) : (
-                  stats.nikBermasalah > 0 && (
-                    <Badge
-                      className="ml-1 bg-rose-500 text-white font-extrabold text-[10px] px-1.5 py-0 h-4 min-w-4 flex items-center justify-center rounded-full"
-                    >
-                      {stats.nikBermasalah}
-                    </Badge>
-                  )
-                )}
-              </TabsTrigger>
+                  {/* TAB 2: DASHBOARD & TREN */}
+                  <TabsTrigger
+                    value="dashboard"
+                    className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
+                  >
+                    <BarChart3 size={16} />
+                    <span>Dashboard & Tren</span>
+                  </TabsTrigger>
 
-              {/* === TAB 5: DASHBOARD & TREN (Yankes, Admin, & Dukcapil) === */}
-              {!isPengusul && (
-                <TabsTrigger
-                  value="dashboard"
-                  className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
-                >
-                  <BarChart3 size={16} />
-                  <span>{isDukcapil ? 'Pantauan NIK' : 'Dashboard & Tren'}</span>
-                </TabsTrigger>
-              )}
+                  {/* TAB 3: REKAP TERVERIFIKASI & EKSPOR */}
+                  <TabsTrigger
+                    value="rekap"
+                    className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
+                  >
+                    <FileSpreadsheet size={16} />
+                    <span>Rekap Terverifikasi</span>
+                    {stats.terverifikasi > 0 && (
+                      <Badge
+                        className="ml-1 bg-emerald-500 text-white font-extrabold text-[10px] px-1.5 py-0 h-4 min-w-4 flex items-center justify-center rounded-full"
+                      >
+                        {stats.terverifikasi}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
 
-              {/* === TAB 6: REKAP TERVERIFIKASI & EKSPOR (Khusus Verifikator Yankes & Admin) === */}
-              {isVerifier && (
-                <TabsTrigger
-                  value="rekap"
-                  className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
-                >
-                  <FileSpreadsheet size={16} />
-                  <span>Rekap Terverifikasi</span>
-                  {stats.terverifikasi > 0 && (
+                  {/* TAB 4: ANTREAN NIK DUKCAPIL */}
+                  <TabsTrigger
+                    value="dukcapil"
+                    className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
+                  >
+                    <AlertCircle size={16} />
+                    <span>Antrean NIK Dukcapil</span>
+                    {stats.nikBermasalah > 0 && (
+                      <Badge
+                        className="ml-1 bg-rose-500 text-white font-extrabold text-[10px] px-1.5 py-0 h-4 min-w-4 flex items-center justify-center rounded-full"
+                      >
+                        {stats.nikBermasalah}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+
+                  {/* TAB 5: PENGAJUAN BARU (OPSIONAL) */}
+                  <TabsTrigger
+                    value="form"
+                    className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
+                  >
+                    <FilePlus size={16} />
+                    <span>Input Pengajuan Baru</span>
+                  </TabsTrigger>
+                </>
+              ) : isPengusul ? (
+                <>
+                  {/* === PENGUSUL: PUSKESMAS & DINSOS === */}
+                  <TabsTrigger
+                    value="form"
+                    className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
+                  >
+                    <FilePlus size={16} />
+                    <span>Form Pengajuan Baru</span>
+                  </TabsTrigger>
+
+                  <TabsTrigger
+                    value="riwayat"
+                    className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
+                  >
+                    <History size={16} />
+                    <span>Riwayat Usulan Unit Saya</span>
                     <Badge
-                      className="ml-1 bg-emerald-500 text-white font-extrabold text-[10px] px-1.5 py-0 h-4 min-w-4 flex items-center justify-center rounded-full"
+                      className="ml-1 bg-slate-100 text-slate-700 font-extrabold text-[10px] px-1.5 py-0 h-4 min-w-4 flex items-center justify-center rounded-full"
                     >
-                      {stats.terverifikasi}
+                      {unitSubmissions.length}
                     </Badge>
-                  )}
-                </TabsTrigger>
+                  </TabsTrigger>
+
+                  <TabsTrigger
+                    value="dukcapil"
+                    className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
+                  >
+                    <AlertCircle size={16} />
+                    <span>Status NIK Bermasalah</span>
+                    {unitNikBermasalahCount > 0 && (
+                      <Badge
+                        className="ml-1 bg-rose-500 text-white font-extrabold text-[10px] px-1.5 py-0 h-4 min-w-4 flex items-center justify-center rounded-full"
+                      >
+                        {unitNikBermasalahCount}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                </>
+              ) : (
+                <>
+                  {/* === PEMERIKSA NIK DUKCAPIL === */}
+                  <TabsTrigger
+                    value="dukcapil"
+                    className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
+                  >
+                    <AlertCircle size={16} />
+                    <span>Antrean NIK Bermasalah</span>
+                    {stats.nikBermasalah > 0 && (
+                      <Badge
+                        className="ml-1 bg-rose-500 text-white font-extrabold text-[10px] px-1.5 py-0 h-4 min-w-4 flex items-center justify-center rounded-full"
+                      >
+                        {stats.nikBermasalah}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+
+                  <TabsTrigger
+                    value="dashboard"
+                    className="rounded-xl px-4 py-2.5 text-xs font-bold gap-2 data-[state=active]:bg-teal-700 data-[state=active]:text-white transition-all"
+                  >
+                    <BarChart3 size={16} />
+                    <span>Pantauan Status NIK</span>
+                  </TabsTrigger>
+                </>
               )}
             </TabsList>
           </div>
@@ -327,30 +460,17 @@ export const PBPUPage: React.FC = () => {
             </TabsContent>
           )}
 
-          {/* === CONTENT 2: FORM PENGAJUAN BARU === */}
-          {!isDukcapil && (
-            <TabsContent value="form" className="mt-0 focus-visible:outline-none">
-              <PBPUSubmissionForm
-                user={user}
-                onSubmit={submitNewApplication}
-                isSubmitting={isSubmitting}
-                onSuccessNavigate={() => setActiveTab(isPengusul ? 'riwayat' : 'verifikasi')}
-              />
+          {/* === CONTENT 2: DASHBOARD STATISTIK & TREN (Yankes, Admin, & Dukcapil) === */}
+          {!isPengusul && (
+            <TabsContent value="dashboard" className="mt-0 focus-visible:outline-none">
+              <PBPUDashboardStats submissions={submissions} stats={stats} />
             </TabsContent>
           )}
 
-          {/* === CONTENT 3: RIWAYAT USULAN UNIT SAYA (Pengusul Puskesmas & Dinsos) === */}
-          {isPengusul && (
-            <TabsContent value="riwayat" className="mt-0 focus-visible:outline-none">
-              <PBPUVerificationPanel
-                submissions={unitSubmissions}
-                user={user}
-                onVerify={verifySubmission}
-                isLoading={dataLoading}
-                isReadOnly={true}
-                panelTitle="Riwayat Usulan Unit Saya"
-                panelSubtitle="Daftar seluruh usulan calon peserta PBPU BP yang diajukan oleh unit Anda beserta status telaah dari Bidang Yankes Dinas Kesehatan."
-              />
+          {/* === CONTENT 3: REKAP TERVERIFIKASI & EKSPOR (Yankes & Admin) === */}
+          {isVerifier && (
+            <TabsContent value="rekap" className="mt-0 focus-visible:outline-none">
+              <PBPURecapExport submissions={submissions} />
             </TabsContent>
           )}
 
@@ -364,17 +484,30 @@ export const PBPUPage: React.FC = () => {
             />
           </TabsContent>
 
-          {/* === CONTENT 5: DASHBOARD STATISTIK === */}
-          {!isPengusul && (
-            <TabsContent value="dashboard" className="mt-0 focus-visible:outline-none">
-              <PBPUDashboardStats submissions={submissions} stats={stats} />
+          {/* === CONTENT 5: FORM PENGAJUAN BARU === */}
+          {!isDukcapil && (
+            <TabsContent value="form" className="mt-0 focus-visible:outline-none">
+              <PBPUSubmissionForm
+                user={user}
+                onSubmit={submitNewApplication}
+                isSubmitting={isSubmitting}
+                onSuccessNavigate={() => handleTabChange(isPengusul ? 'riwayat' : 'verifikasi')}
+              />
             </TabsContent>
           )}
 
-          {/* === CONTENT 6: REKAP TERVERIFIKASI & EKSPOR === */}
-          {isVerifier && (
-            <TabsContent value="rekap" className="mt-0 focus-visible:outline-none">
-              <PBPURecapExport submissions={submissions} />
+          {/* === CONTENT 6: RIWAYAT USULAN UNIT SAYA (Pengusul Puskesmas & Dinsos) === */}
+          {isPengusul && (
+            <TabsContent value="riwayat" className="mt-0 focus-visible:outline-none">
+              <PBPUVerificationPanel
+                submissions={unitSubmissions}
+                user={user}
+                onVerify={verifySubmission}
+                isLoading={dataLoading}
+                isReadOnly={true}
+                panelTitle="Riwayat Usulan Unit Saya"
+                panelSubtitle="Daftar seluruh usulan calon peserta PBPU BP yang diajukan oleh unit Anda beserta status telaah dari Bidang Yankes Dinas Kesehatan."
+              />
             </TabsContent>
           )}
         </Tabs>
