@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
-export type UserRole = 'admin' | 'user' | 'bidang' | 'ob' | 'puskesmas' | 'pengurus_barang';
+export type UserRole = 'admin' | 'user' | 'bidang' | 'ob' | 'puskesmas' | 'pengurus_barang' | 'dinsos' | 'dukcapil';
 
 export interface User {
   id: string;
@@ -16,6 +16,8 @@ export const resolveRole = (data?: { username?: string; role?: string; is_ob?: b
   if (data.role === 'admin') return 'admin';
   const uname = (data.username || '').toLowerCase();
   if (Boolean(data.is_ob) || data.role === 'ob' || uname === 'fathor') return 'ob';
+  if (uname === 'dinsos' || uname.startsWith('dinsos_')) return 'dinsos';
+  if (uname === 'dukcapil' || uname.startsWith('dukcapil_')) return 'dukcapil';
   if (
     uname === 'pengurus_barang' ||
     uname === 'pengurusbarang' ||
@@ -52,11 +54,42 @@ export const isUserPengurusBarang = (user: User | null): boolean => {
   return user.role === 'pengurus_barang' || (user.username || '').toLowerCase().startsWith('pengurus');
 };
 
+// Verifikator Fungsional: Khusus Akun Bidang Yankes
+export const isUserYankes = (user: User | null): boolean => {
+  if (!user) return false;
+  const uname = (user.username || '').toLowerCase();
+  return uname === 'yankes' || uname.includes('yankes');
+};
+
+// Pengusul: Puskesmas & Dinas Sosial
+export const isUserPengusul = (user: User | null): boolean => {
+  if (!user) return false;
+  const uname = (user.username || '').toLowerCase();
+  return (
+    user.role === 'puskesmas' ||
+    user.role === 'dinsos' ||
+    uname === 'dinsos' ||
+    uname.startsWith('puskesmas') ||
+    uname.startsWith('pkm_')
+  );
+};
+
+// Pemeriksa NIK: Khusus Akun Dukcapil
+export const isUserDukcapil = (user: User | null): boolean => {
+  if (!user) return false;
+  const uname = (user.username || '').toLowerCase();
+  return user.role === 'dukcapil' || uname === 'dukcapil';
+};
+
+// Hak Akses Masuk ke Modul PBPU BP:
+// - Verifikator: yankes
+// - Administrator: admin (punya akses kontrol/supervisi)
+// - Pengusul: puskesmas & dinsos
+// - Penanganan NIK: dukcapil
 export const isUserPBPU = (user: User | null): boolean => {
   if (!user) return false;
   if (user.role === 'admin') return true;
-  const uname = (user.username || '').toLowerCase();
-  return uname === 'yankes' || uname.includes('yankes') || uname === 'dinsos' || uname === 'dukcapil';
+  return isUserYankes(user) || isUserPengusul(user) || isUserDukcapil(user);
 };
 
 export const useSupabaseAuth = () => {

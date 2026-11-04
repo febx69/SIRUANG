@@ -59,8 +59,9 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
   isSubmitting,
   onSuccessNavigate,
 }) => {
-  const isPuskesmasUser = user?.role === 'puskesmas' || user?.username.startsWith('puskesmas');
-  const isDinsosUser = user?.username.toLowerCase().includes('dinsos');
+  const uname = (user?.username || '').toLowerCase();
+  const isPuskesmasUser = user?.role === 'puskesmas' || uname.startsWith('puskesmas') || uname.startsWith('pkm_');
+  const isDinsosUser = user?.role === 'dinsos' || uname.includes('dinsos');
 
   // Jalur Pengusulan
   const [channel, setChannel] = useState<PBPUSubmissionChannel>(
@@ -71,9 +72,9 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
   const [submitterUnit, setSubmitterUnit] = useState(() => {
     if (isPuskesmasUser) {
       const match = PAMEKASAN_PUSKESMAS.find((p) =>
-        p.toLowerCase().replace(/[\s']/g, '').includes(user?.username.replace(/puskesmas_?/i, '') || '')
+        p.toLowerCase().replace(/[\s']/g, '').includes(uname.replace(/puskesmas_?/i, '') || '')
       );
-      return match || user?.username || 'Puskesmas';
+      return match || user?.username || 'Puskesmas Proppo';
     }
     if (isDinsosUser) return 'Dinas Sosial Kabupaten Pamekasan';
     return 'Puskesmas Proppo';
@@ -297,10 +298,13 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
+                  disabled={isDinsosUser}
                   onClick={() => setChannel('PUSKESMAS')}
                   className={`p-3 rounded-xl border text-left transition-all ${
                     channel === 'PUSKESMAS'
                       ? 'border-teal-600 bg-teal-50/70 text-teal-900 font-bold shadow-sm'
+                      : isDinsosUser
+                      ? 'opacity-40 cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
                       : 'border-slate-200 hover:border-slate-300 text-slate-600'
                   }`}
                 >
@@ -310,10 +314,13 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
 
                 <button
                   type="button"
+                  disabled={isPuskesmasUser}
                   onClick={() => setChannel('DINSOS')}
                   className={`p-3 rounded-xl border text-left transition-all ${
                     channel === 'DINSOS'
                       ? 'border-blue-600 bg-blue-50/70 text-blue-900 font-bold shadow-sm'
+                      : isPuskesmasUser
+                      ? 'opacity-40 cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
                       : 'border-slate-200 hover:border-slate-300 text-slate-600'
                   }`}
                 >
@@ -342,8 +349,9 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
                 <Input
                   value={submitterUnit}
                   onChange={(e) => setSubmitterUnit(e.target.value)}
+                  readOnly={isDinsosUser}
                   placeholder="Dinas Sosial Kab. Pamekasan"
-                  className="bg-slate-50"
+                  className={isDinsosUser ? "bg-slate-100 font-semibold cursor-not-allowed" : "bg-slate-50"}
                 />
               )}
             </div>

@@ -41,11 +41,14 @@ const getInitials = (name?: string) => {
 };
 
 const getRoleLabel = (role?: string, is_ob?: boolean, username?: string) => {
+  const uname = (username || '').toLowerCase();
   if (role === "admin") return "Admin";
-  if (username === "yankes") return "Bidang Yankes";
+  if (uname === "yankes") return "Bidang Yankes (Verifikator)";
+  if (uname === "dinsos") return "Dinas Sosial (Pengusul)";
+  if (uname === "dukcapil") return "Dukcapil (Pemeriksa NIK)";
   if (role === "pengurus_barang") return "Pengurus Barang (Verifikator)";
-  if (role === "puskesmas") return "Puskesmas";
-  if (is_ob || role === "ob") return "Petugas OB";
+  if (role === "puskesmas" || uname.startsWith("puskesmas")) return "Puskesmas (Pengusul)";
+  if (is_ob || role === "ob" || uname === "fathor") return "Petugas OB";
   if (role === "bidang") return "Bidang";
   if (!role) return "Bidang";
   if (role.toLowerCase() === "user") return "Staf";
@@ -56,113 +59,82 @@ const Header = ({ user, onLogout }: HeaderProps) => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Jika yang login Puskesmas atau Pengurus Barang: Menu yang muncul DIBATASI HANYA SHS!
-  const isPuskesmas = user?.role === "puskesmas";
-  const isPengurusBarang = user?.role === "pengurus_barang" || (user?.username || "").toLowerCase().startsWith("pengurus");
-  const isOB = Boolean(user?.is_ob) || user?.role === "ob" || (user?.username || "").toLowerCase() === "fathor";
+  const uname = (user?.username || "").toLowerCase();
+  const isPuskesmas = user?.role === "puskesmas" || uname.startsWith("puskesmas") || uname.startsWith("pkm_");
+  const isDinsos = user?.role === "dinsos" || uname === "dinsos";
+  const isDukcapil = user?.role === "dukcapil" || uname === "dukcapil";
+  const isPengurusBarang = user?.role === "pengurus_barang" || uname.startsWith("pengurus");
+  const isOB = Boolean(user?.is_ob) || user?.role === "ob" || uname === "fathor";
   const isAdmin = user?.role === "admin";
+  const isYankes = uname === "yankes" || uname.includes("yankes");
 
-  let navItems = [
-    {
-      name: "Beranda",
-      path: "/",
-      icon: Home,
-      isActive: (pathname: string) => pathname === "/"
-    },
-    {
-      name: "Ruangan",
-      path: "/ruangan",
-      icon: Armchair,
-      isActive: (pathname: string) => pathname === "/ruangan" || pathname === "/jadwal"
-    },
-    {
-      name: "Mobil Dinas",
-      path: "/mobil",
-      icon: Car,
-      isActive: (pathname: string) => pathname === "/mobil"
-    },
-    {
-      name: "Zoom",
-      path: "/zoom",
-      icon: Video,
-      isActive: (pathname: string) => pathname === "/zoom"
-    },
-    {
-      name: "Kebersihan",
-      path: "/kebersihan",
-      icon: Sparkles,
-      isActive: (pathname: string) => pathname === "/kebersihan"
-    },
-    {
-      name: "Layanan IT",
-      path: "/it-support",
-      icon: Laptop,
-      isActive: (pathname: string) => pathname === "/it-support"
-    },
-    {
-      name: "Usulan SHS",
-      path: "/usulan-shs",
-      icon: FileSpreadsheet,
-      isActive: (pathname: string) => pathname === "/usulan-shs"
-    }
-  ];
+  let navItems: {
+    name: string;
+    path: string;
+    icon: any;
+    isActive: (pathname: string) => boolean;
+  }[] = [];
 
-  // KHUSUS Akun Bidang Yankes dan Administrator: Tambahkan menu PBPU BP tepat setelah Beranda
-  if (isUserPBPU(user)) {
-    navItems.splice(1, 0, {
-      name: "PBPU BP",
-      path: "/pbpu-bp",
-      icon: HeartHandshake,
-      isActive: (pathname: string) => pathname === "/pbpu-bp"
-    });
-  }
-
-  if (isPuskesmas || isPengurusBarang) {
-    // Sesuai permintaan: Menu yang muncul HANYA SHS (dan Beranda)
+  if (isPengurusBarang) {
+    // Pengurus Barang: HANYA Beranda dan Usulan SHS
     navItems = [
-      {
-        name: "Beranda",
-        path: "/",
-        icon: Home,
-        isActive: (pathname: string) => pathname === "/"
-      },
-      {
-        name: "Usulan SHS",
-        path: "/usulan-shs",
-        icon: FileSpreadsheet,
-        isActive: (pathname: string) => pathname === "/usulan-shs"
-      }
+      { name: "Beranda", path: "/", icon: Home, isActive: (p) => p === "/" },
+      { name: "Usulan SHS", path: "/usulan-shs", icon: FileSpreadsheet, isActive: (p) => p === "/usulan-shs" },
+    ];
+  } else if (isPuskesmas) {
+    // Puskesmas: Beranda, PBPU BP (Pengusul), dan Usulan SHS
+    navItems = [
+      { name: "Beranda", path: "/", icon: Home, isActive: (p) => p === "/" },
+      { name: "PBPU BP", path: "/pbpu-bp", icon: HeartHandshake, isActive: (p) => p === "/pbpu-bp" },
+      { name: "Usulan SHS", path: "/usulan-shs", icon: FileSpreadsheet, isActive: (p) => p === "/usulan-shs" },
+    ];
+  } else if (isDinsos || isDukcapil) {
+    // Dinsos (Pengusul) atau Dukcapil (Pemeriksa NIK): Beranda dan PBPU BP
+    navItems = [
+      { name: "Beranda", path: "/", icon: Home, isActive: (p) => p === "/" },
+      { name: "PBPU BP", path: "/pbpu-bp", icon: HeartHandshake, isActive: (p) => p === "/pbpu-bp" },
     ];
   } else if (isOB) {
-    // Sesuai permintaan: Khusus Fathor / Petugas Kebersihan HANYA Beranda, Ruangan, dan Kebersihan
+    // Petugas Kebersihan / Fathor: Beranda, Ruangan, Kebersihan
     navItems = [
-      {
-        name: "Beranda",
-        path: "/",
-        icon: Home,
-        isActive: (pathname: string) => pathname === "/"
-      },
-      {
-        name: "Ruangan",
-        path: "/ruangan",
-        icon: Armchair,
-        isActive: (pathname: string) => pathname === "/ruangan" || pathname === "/jadwal"
-      },
-      {
-        name: "Kebersihan",
-        path: "/kebersihan",
-        icon: Sparkles,
-        isActive: (pathname: string) => pathname === "/kebersihan"
-      }
+      { name: "Beranda", path: "/", icon: Home, isActive: (p) => p === "/" },
+      { name: "Ruangan", path: "/ruangan", icon: Armchair, isActive: (p) => p === "/ruangan" || p === "/jadwal" },
+      { name: "Kebersihan", path: "/kebersihan", icon: Sparkles, isActive: (p) => p === "/kebersihan" },
+    ];
+  } else if (isYankes) {
+    // Bidang Yankes: Beranda, PBPU BP (Verifikator), Ruangan, Mobil, Zoom, Kebersihan, Layanan IT (Tanpa SHS)
+    navItems = [
+      { name: "Beranda", path: "/", icon: Home, isActive: (p) => p === "/" },
+      { name: "PBPU BP", path: "/pbpu-bp", icon: HeartHandshake, isActive: (p) => p === "/pbpu-bp" },
+      { name: "Ruangan", path: "/ruangan", icon: Armchair, isActive: (p) => p === "/ruangan" || p === "/jadwal" },
+      { name: "Mobil Dinas", path: "/mobil", icon: Car, isActive: (p) => p === "/mobil" },
+      { name: "Zoom", path: "/zoom", icon: Video, isActive: (p) => p === "/zoom" },
+      { name: "Kebersihan", path: "/kebersihan", icon: Sparkles, isActive: (p) => p === "/kebersihan" },
+      { name: "Layanan IT", path: "/it-support", icon: Laptop, isActive: (p) => p === "/it-support" },
     ];
   } else if (isAdmin) {
-    // Admin memiliki akses penuh termasuk shortcut ke Panel Admin
-    navItems.push({
-      name: "Panel Admin",
-      path: "/admin",
-      icon: ShieldCheck,
-      isActive: (pathname: string) => pathname === "/admin"
-    });
+    // Administrator: Akses penuh
+    navItems = [
+      { name: "Beranda", path: "/", icon: Home, isActive: (p) => p === "/" },
+      { name: "PBPU BP", path: "/pbpu-bp", icon: HeartHandshake, isActive: (p) => p === "/pbpu-bp" },
+      { name: "Ruangan", path: "/ruangan", icon: Armchair, isActive: (p) => p === "/ruangan" || p === "/jadwal" },
+      { name: "Mobil Dinas", path: "/mobil", icon: Car, isActive: (p) => p === "/mobil" },
+      { name: "Zoom", path: "/zoom", icon: Video, isActive: (p) => p === "/zoom" },
+      { name: "Kebersihan", path: "/kebersihan", icon: Sparkles, isActive: (p) => p === "/kebersihan" },
+      { name: "Layanan IT", path: "/it-support", icon: Laptop, isActive: (p) => p === "/it-support" },
+      { name: "Usulan SHS", path: "/usulan-shs", icon: FileSpreadsheet, isActive: (p) => p === "/usulan-shs" },
+      { name: "Panel Admin", path: "/admin", icon: ShieldCheck, isActive: (p) => p === "/admin" },
+    ];
+  } else {
+    // Bidang lain di Dinkes (SDK, Kesmas, P2P, Sekretariat, dll): Layanan umum Dinkes (TANPA PBPU BP dan TANPA SHS)
+    navItems = [
+      { name: "Beranda", path: "/", icon: Home, isActive: (p) => p === "/" },
+      { name: "Ruangan", path: "/ruangan", icon: Armchair, isActive: (p) => p === "/ruangan" || p === "/jadwal" },
+      { name: "Mobil Dinas", path: "/mobil", icon: Car, isActive: (p) => p === "/mobil" },
+      { name: "Zoom", path: "/zoom", icon: Video, isActive: (p) => p === "/zoom" },
+      { name: "Kebersihan", path: "/kebersihan", icon: Sparkles, isActive: (p) => p === "/kebersihan" },
+      { name: "Layanan IT", path: "/it-support", icon: Laptop, isActive: (p) => p === "/it-support" },
+    ];
   }
 
   return (
@@ -171,7 +143,7 @@ const Header = ({ user, onLogout }: HeaderProps) => {
         <div className="flex items-center justify-between gap-2 sm:gap-4">
           
           {/* SISI KIRI: Logo & Identitas Pemkab */}
-          <Link to={isPuskesmas ? "/usulan-shs" : "/"} className="flex items-center gap-3 shrink-0 group select-none">
+          <Link to="/" className="flex items-center gap-3 shrink-0 group select-none">
             <img 
               src={logoImage} 
               alt="Logo Kabupaten Pamekasan" 

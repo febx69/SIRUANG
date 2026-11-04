@@ -58,6 +58,9 @@ interface PBPUVerificationPanelProps {
     reasonOrNote?: string
   ) => Promise<boolean>;
   isLoading: boolean;
+  isReadOnly?: boolean;
+  panelTitle?: string;
+  panelSubtitle?: string;
 }
 
 export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
@@ -65,8 +68,15 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
   user,
   onVerify,
   isLoading,
+  isReadOnly = false,
+  panelTitle,
+  panelSubtitle,
 }) => {
-  const isVerifier = user?.username === 'yankes' || user?.role === 'admin';
+  const uname = (user?.username || '').toLowerCase();
+  const isYankes = uname === 'yankes';
+  const isAdmin = user?.role === 'admin';
+  // Verifikator: khusus akun yankes (admin tetap punya akses verifikasi jika diperlukan)
+  const isVerifier = !isReadOnly && (isYankes || isAdmin);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -180,6 +190,20 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
 
   return (
     <div className="space-y-4">
+      {panelTitle && (
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">{panelTitle}</h2>
+            {panelSubtitle && <p className="text-xs text-slate-500 mt-0.5">{panelSubtitle}</p>}
+          </div>
+          {isReadOnly && (
+            <Badge variant="outline" className="text-xs text-teal-700 border-teal-200 bg-teal-50 font-semibold">
+              Mode Pengusul (Hanya Lihat)
+            </Badge>
+          )}
+        </div>
+      )}
+
       {/* FILTER & PENCARIAN */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <div className="relative flex-1">
@@ -620,7 +644,7 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
                   Tutup
                 </Button>
 
-                {isVerifier && (
+                {isVerifier ? (
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
@@ -638,6 +662,22 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
                     >
                       <CheckCircle2 size={14} /> Setujui (Terverifikasi)
                     </Button>
+                  </div>
+                ) : (
+                  <div className="text-xs text-slate-500 font-medium">
+                    {selectedSubmission.verification_status === 'MENUNGGU' ? (
+                      <span className="text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
+                        ⏳ Menunggu telaah & verifikasi oleh Tim Bidang Yankes Dinkes
+                      </span>
+                    ) : selectedSubmission.verification_status === 'TERVERIFIKASI' ? (
+                      <span className="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                        ✅ Telah Terverifikasi oleh {selectedSubmission.verifier_username || 'Bidang Yankes'}
+                      </span>
+                    ) : (
+                      <span className="text-rose-700 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200">
+                        ❌ Ditolak oleh {selectedSubmission.verifier_username || 'Bidang Yankes'}
+                      </span>
+                    )}
                   </div>
                 )}
               </DialogFooter>

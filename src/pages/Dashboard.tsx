@@ -18,11 +18,15 @@ const Dashboard = () => {
 
   if (!user) return <Navigate to="/login" replace />;
 
+  const uname = (user.username || "").toLowerCase();
+  const isPuskesmas = user.role === "puskesmas" || uname.startsWith("puskesmas") || uname.startsWith("pkm_");
+  const isDinsos = user.role === "dinsos" || uname === "dinsos";
+  const isDukcapil = user.role === "dukcapil" || uname === "dukcapil";
+  const isPengurusBarang = user.role === "pengurus_barang" || uname.startsWith("pengurus");
   const isOB = isUserOB(user);
-  const isPuskesmas = user.role === "puskesmas";
-  const isPengurusBarang = user.role === "pengurus_barang" || (user.username || "").toLowerCase().startsWith("pengurus");
-  const isSingleMenu = isPuskesmas || isPengurusBarang;
   const isAdmin = user.role === "admin";
+  const isYankes = uname === "yankes" || uname.includes("yankes");
+  const isSingleMenu = isPengurusBarang || isDinsos || isDukcapil;
 
   const allCards = [
     {
@@ -118,32 +122,53 @@ const Dashboard = () => {
       glowColor: "rgba(15,118,110,0.15)",
       borderHover: "rgba(15,118,110,0.3)",
       accentColor: "#0f766e",
-      title: "Pendaftaran PBPU BP",
-      desc: user?.username === "yankes"
-        ? "Pusat verifikasi kepesertaan PBPU BP dari Puskesmas & Dinsos, validasi NIK Dukcapil, dan ekspor rekapitulasi."
-        : "Pendaftaran calon peserta PBPU BP (PBI APBD) Pemerintah Daerah, kelengkapan berkas DPJP/SKTM/Desil, dan pantau status.",
-      meta: user?.username === "yankes" ? "Verifikasi Bidang Yankes" : "Pendaftaran & Verifikasi",
+      title: isDukcapil ? "Pemeriksaan NIK PBPU BP" : "Pendaftaran PBPU BP",
+      desc: isYankes
+        ? "Pusat verifikasi kepesertaan PBPU BP dari Puskesmas & Dinsos, telaah syarat DPJP/SKTM/Desil, dan ekspor rekapitulasi."
+        : isDukcapil
+        ? "Pemeriksaan dan pembaruan status NIK bermasalah untuk calon peserta PBPU BP setelah penyelesaian di SIAK."
+        : isDinsos
+        ? "Pengajuan usulan calon peserta PBPU BP jalur Dinas Sosial (Desil 1–5), unggah bukti desil, dan pantau status."
+        : isPuskesmas
+        ? "Pengajuan usulan calon peserta PBPU BP jalur Puskesmas (Kondisi Khusus DPJP / SKTM) dan pantau proses verifikasi."
+        : "Pendaftaran dan pemantauan usulan kepesertaan PBPU BP Pemerintah Daerah.",
+      meta: isYankes
+        ? "Verifikasi Bidang Yankes"
+        : isDukcapil
+        ? "Tindak Lanjut NIK Dukcapil"
+        : isDinsos
+        ? "Jalur Dinas Sosial"
+        : isPuskesmas
+        ? "Jalur Puskesmas"
+        : "Pendaftaran & Verifikasi",
       metaIcon: ShieldCheck,
     },
   ];
 
-  // Pemetaan kartu berdasarkan peran (PBPU BP HANYA boleh muncul untuk Bidang Yankes & Admin)
-  let cards = allCards.filter(c => {
-    if (c.id === "pbpu") {
-      return isUserPBPU(user);
-    }
-    return true;
-  });
+  // Pemetaan kartu berdasarkan peran
+  let cards: typeof allCards = [];
 
-  if (isPengurusBarang || isPuskesmas) {
+  if (isPengurusBarang) {
     cards = allCards.filter(c => c.id === "shs");
+  } else if (isPuskesmas) {
+    // Puskesmas: Usulan SHS dan Pendaftaran PBPU BP
+    cards = allCards.filter(c => c.id === "shs" || c.id === "pbpu");
+  } else if (isDinsos || isDukcapil) {
+    // Dinsos & Dukcapil: Hanya kartu PBPU BP
+    cards = allCards.filter(c => c.id === "pbpu");
   } else if (isOB) {
     cards = allCards.filter(c => c.id === "kebersihan" || c.id === "ruangan");
-  } else if (user?.username === "yankes") {
-    // Akun Bidang Yankes: tampilkan PBPU BP di urutan pertama
+  } else if (isYankes) {
+    // Akun Bidang Yankes: tampilkan PBPU BP di urutan pertama (Tanpa kartu SHS)
     const pbpuCard = allCards.find(c => c.id === "pbpu");
-    const otherCards = cards.filter(c => c.id !== "pbpu");
-    cards = pbpuCard ? [pbpuCard, ...otherCards] : otherCards;
+    const dinkesCards = allCards.filter(c => c.id !== "pbpu" && c.id !== "shs");
+    cards = pbpuCard ? [pbpuCard, ...dinkesCards] : dinkesCards;
+  } else if (isAdmin) {
+    // Administrator: seluruh kartu
+    cards = allCards;
+  } else {
+    // Akun Bidang lain (SDK, Kesmas, P2P, Sekretariat, dll): Layanan internal Dinkes (TANPA PBPU BP dan TANPA SHS)
+    cards = allCards.filter(c => c.id !== "pbpu" && c.id !== "shs");
   }
 
   return (
@@ -237,14 +262,23 @@ const Dashboard = () => {
         {/* Greeting */}
         <div style={{ textAlign:"center", marginBottom: isSingleMenu || isOB ? "28px" : "40px", animation:"fade-up-card 0.4s cubic-bezier(0.4,0,0.2,1) both" }}>
           <p style={{ fontSize:"0.8rem", color:"#64748b", letterSpacing:"0.15em", textTransform:"uppercase", fontWeight:600, marginBottom:"8px" }}>
-            {isPuskesmas ? "Portal Khusus Puskesmas" : isPengurusBarang ? "Portal Verifikator SHS" : user.username === "yankes" ? "Portal Verifikator Yankes (PBPU BP)" : isOB ? "Petugas Kebersihan / OB" : "Selamat datang"}
+            {isPuskesmas ? "Portal Pengusul Puskesmas" :
+             isDinsos ? "Portal Pengusul Dinas Sosial (PBPU BP)" :
+             isDukcapil ? "Portal Penanganan NIK Dukcapil (PBPU BP)" :
+             isPengurusBarang ? "Portal Verifikator SHS" :
+             isYankes ? "Portal Verifikator Yankes (PBPU BP)" :
+             isOB ? "Petugas Kebersihan / OB" : "Selamat datang"}
           </p>
           <h2 style={{ fontSize:"1.75rem", fontWeight:800, color:"#0b1329", margin:"0 0 8px 0" }}>
             {user.username} 👋
           </h2>
           <p style={{ fontSize:"0.9rem", color:"#64748b", margin:0, maxWidth:"600px", marginInline:"auto" }}>
             {isPuskesmas
-              ? "Akun Anda terdaftar untuk unit Puskesmas. Akses menu Anda dikhususkan untuk pengusulan Standar Harga Satuan (SHS)."
+              ? "Akun Anda terdaftar untuk unit Puskesmas. Anda dapat mengajukan usulan Standar Harga Satuan (SHS) dan usulan kepesertaan PBPU BP."
+              : isDinsos
+              ? "Selamat datang PIC Dinas Sosial. Akses Anda dikhususkan untuk pengusulan calon peserta PBPU BP jalur Desil 1–5."
+              : isDukcapil
+              ? "Selamat datang Petugas Dukcapil. Akses Anda dikhususkan untuk pemeriksaan dan pembaruan tindak lanjut status NIK bermasalah."
               : isPengurusBarang
               ? "Selamat bertugas Pengurus Barang. Akses menu Anda dikhususkan untuk verifikasi dan penelaahan usulan Standar Harga Satuan (SHS)."
               : isOB

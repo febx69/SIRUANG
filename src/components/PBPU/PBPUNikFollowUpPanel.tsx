@@ -40,13 +40,21 @@ interface PBPUNikFollowUpPanelProps {
     newStatus: PBPUNikStatus,
     note: string
   ) => Promise<boolean>;
+  canUpdateNik?: boolean;
 }
 
 export const PBPUNikFollowUpPanel: React.FC<PBPUNikFollowUpPanelProps> = ({
   submissions,
   user,
   onUpdateNik,
+  canUpdateNik,
 }) => {
+  const uname = (user?.username || '').toLowerCase();
+  const isDukcapil = user?.role === 'dukcapil' || uname === 'dukcapil';
+  const isYankesOrAdmin = uname === 'yankes' || user?.role === 'admin';
+  // Hanya Dukcapil (atau Yankes/Admin jika perlu) yang dapat memperbarui status NIK
+  const allowUpdate = canUpdateNik !== undefined ? canUpdateNik : (isDukcapil || isYankesOrAdmin);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'BERMASALAH' | 'ALL'>('BERMASALAH');
 
@@ -198,14 +206,31 @@ export const PBPUNikFollowUpPanel: React.FC<PBPUNikFollowUpPanelProps> = ({
                   )}
                 </div>
 
-                <div className="pt-4 mt-3 border-t flex items-center justify-end">
-                  <Button
-                    size="sm"
-                    onClick={() => handleOpenFollowUp(sub)}
-                    className="text-xs font-bold gap-1 bg-slate-900 hover:bg-slate-800 text-white"
-                  >
-                    <FileCheck size={14} /> Tindak Lanjut NIK
-                  </Button>
+                <div className="pt-4 mt-3 border-t flex items-center justify-between">
+                  <div className="text-[11px] text-slate-500">
+                    {sub.nik_status === 'BERMASALAH' ? (
+                      <span className="text-rose-600 font-semibold flex items-center gap-1">
+                        <AlertCircle size={12} /> Menunggu penanganan Dukcapil
+                      </span>
+                    ) : (
+                      <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                        <CheckCircle2 size={12} /> Masalah NIK selesai diatasi
+                      </span>
+                    )}
+                  </div>
+                  {allowUpdate ? (
+                    <Button
+                      size="sm"
+                      onClick={() => handleOpenFollowUp(sub)}
+                      className="text-xs font-bold gap-1 bg-slate-900 hover:bg-slate-800 text-white"
+                    >
+                      <FileCheck size={14} /> Tindak Lanjut NIK
+                    </Button>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] text-slate-500">
+                      Wewenang Dukcapil
+                    </Badge>
+                  )}
                 </div>
               </div>
             );

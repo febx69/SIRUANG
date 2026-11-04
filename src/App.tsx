@@ -23,15 +23,18 @@ import SplashScreen from "./components/SplashScreen";
 
 const queryClient = new QueryClient();
 
-// Guard Khusus Puskesmas & Pengurus Barang: Mengunci menu dan akses ke selain SHS
+// Guard Khusus Akun Khusus (Puskesmas, Pengurus Barang, Dinsos, Dukcapil): Mengunci akses ke layanan umum
 const PuskesmasRestriction = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useSupabaseAuth();
   if (isLoading) return null;
-  const isLimitedToSHS =
-    user?.role === "puskesmas" ||
-    user?.role === "pengurus_barang" ||
-    (user?.username || "").toLowerCase().startsWith("pengurus");
-  if (isLimitedToSHS) {
+  const uname = (user?.username || "").toLowerCase();
+  if (user?.role === "pengurus_barang" || uname.startsWith("pengurus")) {
+    return <Navigate to="/usulan-shs" replace />;
+  }
+  if (user?.role === "dinsos" || uname === "dinsos" || user?.role === "dukcapil" || uname === "dukcapil") {
+    return <Navigate to="/pbpu-bp" replace />;
+  }
+  if (user?.role === "puskesmas" || uname.startsWith("puskesmas") || uname.startsWith("pkm_")) {
     return <Navigate to="/usulan-shs" replace />;
   }
   return <>{children}</>;
