@@ -40,6 +40,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import {
   isGoogleDriveUrl,
+  extractGoogleDriveFileId,
   getGoogleDriveDownloadUrl,
 } from '@/lib/googleDriveHelper';
 
