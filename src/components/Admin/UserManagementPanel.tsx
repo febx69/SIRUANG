@@ -164,7 +164,7 @@ const UserManagementPanel = () => {
               <Label>Password</Label>
               <div className="relative">
                 <Input type={showPwd ? "text" : "password"} placeholder="Masukkan password" value={form.password} onChange={e => setForm(p => ({...p, password: e.target.value}))} className="bg-slate-50 pr-10" />
-                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onClick={() => setShowPwd(p => !p)}>
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 z-20 text-slate-400 hover:text-slate-600 cursor-pointer p-0.5" onClick={() => setShowPwd(p => !p)} aria-label={showPwd ? "Sembunyikan password" : "Lihat password"}>
                   {showPwd ? <EyeOff size={15}/> : <Eye size={15}/>}
                 </button>
               </div>
@@ -222,7 +222,7 @@ const UserManagementPanel = () => {
               <Label>Password Baru <span className="text-slate-400 font-normal">(kosongkan jika tidak ganti)</span></Label>
               <div className="relative">
                 <Input type={showEditPwd ? "text" : "password"} placeholder="Password baru..." value={editForm.password || ''} onChange={e => setEditForm(p => ({...p, password: e.target.value}))} className="bg-slate-50 pr-10" />
-                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onClick={() => setShowEditPwd(p => !p)}>
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 z-20 text-slate-400 hover:text-slate-600 cursor-pointer p-0.5" onClick={() => setShowEditPwd(p => !p)} aria-label={showEditPwd ? "Sembunyikan password" : "Lihat password"}>
                   {showEditPwd ? <EyeOff size={15}/> : <Eye size={15}/>}
                 </button>
               </div>

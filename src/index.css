@@ -193,3 +193,9 @@ textarea.focus-visible-ring:focus-visible,
 [data-radix-alert-dialog-overlay] {
   animation: fade-in 0.2s ease both !important;
 }
+
+/* Sembunyikan icon mata bawaan browser Edge / IE agar tidak bertabrakan dengan tombol icon custom */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none !important;
+}

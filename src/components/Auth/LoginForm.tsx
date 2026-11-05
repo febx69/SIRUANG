@@ -73,7 +73,7 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
             
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <div className="relative">
+              <div className="relative flex items-center">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -81,13 +81,14 @@ const LoginForm = ({ onLogin }: LoginFormProps) => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan password"
                   required
-                  className="transition-all duration-200 focus-visible-ring pr-10"
+                  className="transition-all duration-200 focus-visible-ring pr-11"
                 />
                 <button
                   type="button"
                   tabIndex={-1}
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                  title={showPassword ? "Sembunyikan password" : "Tampilkan password"}
                   aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}

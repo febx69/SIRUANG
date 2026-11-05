@@ -1333,7 +1333,8 @@ const AdminPanel = () => {
                       <button
                         type="button"
                         onClick={() => setShowAddPwd((p) => !p)}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 text-slate-400 hover:text-slate-600 cursor-pointer p-0.5"
+                        aria-label={showAddPwd ? "Sembunyikan password" : "Lihat password"}
                       >
                         {showAddPwd ? <EyeOff size={14} /> : <Eye size={14} />}
                       </button>
@@ -1403,7 +1404,8 @@ const AdminPanel = () => {
                       <button
                         type="button"
                         onClick={() => setShowEditPwd((p) => !p)}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 text-slate-400 hover:text-slate-600 cursor-pointer p-0.5"
+                        aria-label={showEditPwd ? "Sembunyikan password" : "Lihat password"}
                       >
                         {showEditPwd ? <EyeOff size={14} /> : <Eye size={14} />}
                       </button>
