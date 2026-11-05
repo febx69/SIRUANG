@@ -29,7 +29,9 @@ const EditBookingForm = ({ booking, onSubmit, onCancel }: EditBookingFormProps) 
   
   const [formData, setFormData] = useState({
     date: booking.date,
+    endDate: booking.endDate || booking.date,
     name: booking.name,
+    seksi: booking.seksi || '',
     room: booking.room,
     startTime: booking.startTime,
     endTime: booking.endTime,

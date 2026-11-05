@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PeriodOption } from "@/hooks/useSupabaseBookings";
 import { supabase } from "@/lib/supabase";
+import { UserRole } from "@/hooks/useSupabaseAuth";
 
 interface BookingListProps {
   bookings: BookingData[];
@@ -22,7 +23,7 @@ interface BookingListProps {
   onEdit?: (booking: BookingData) => void;
   onBulkDelete?: (period: PeriodOption) => Promise<{ success: boolean; error?: string }>;
   onExport?: (period: PeriodOption) => void;
-  userRole: 'admin' | 'user' | 'bidang';
+  userRole: UserRole;
   currentUserId?: string;
   canModify?: (booking: BookingData) => boolean;
   title: string;

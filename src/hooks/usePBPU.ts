@@ -520,7 +520,7 @@ export const usePBPU = (user: User | null) => {
       };
 
       setSubmissions((prev) => {
-        const next = prev.map((item) => {
+        const next: PBPUSubmission[] = prev.map((item): PBPUSubmission => {
           if (item.id !== submissionId) return item;
           return {
             ...item,

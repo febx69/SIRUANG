@@ -354,6 +354,7 @@ export const useITTickets = (user: User | null) => {
     fetchTickets,
     createTicket,
     updateTicketStatus,
+    updateTicket: updateTicketStatus,
     deleteTicket,
     clearAllTickets,
     recapStats,

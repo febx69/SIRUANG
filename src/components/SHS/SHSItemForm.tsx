@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { User } from "@/hooks/useSupabaseAuth";
 import {
   SHSItem,
+  SHSStatus,
   SHSPeriod,
   MasterKategori,
   MasterRekening,

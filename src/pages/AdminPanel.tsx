@@ -91,7 +91,25 @@ const ROLE_CONFIG: Record<UserRole, { label: string; color: string; icon: any; d
     label: "Puskesmas",
     color: "bg-teal-50 text-teal-700 border-teal-200",
     icon: Building,
-    desc: "Akses terkunci KHUSUS modul Usulan SHS",
+    desc: "Pengusul PBPU BP & Usulan SHS",
+  },
+  rsud: {
+    label: "RSUD",
+    color: "bg-cyan-50 text-cyan-700 border-cyan-200",
+    icon: Building,
+    desc: "Pengusul PBPU BP RSUD",
+  },
+  dinsos: {
+    label: "Dinsos",
+    color: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    icon: Building2,
+    desc: "Pengusul PBPU BP Dinas Sosial",
+  },
+  dukcapil: {
+    label: "Dukcapil",
+    color: "bg-purple-50 text-purple-700 border-purple-200",
+    icon: ShieldCheck,
+    desc: "Pemeriksa & validasi status NIK bermasalah",
   },
   bidang: {
     label: "Bidang",
@@ -107,7 +125,7 @@ const ROLE_CONFIG: Record<UserRole, { label: string; color: string; icon: any; d
   },
   pengurus_barang: {
     label: "Pengurus Barang",
-    color: "bg-purple-50 text-purple-700 border-purple-200",
+    color: "bg-amber-50 text-amber-700 border-amber-200",
     icon: ShieldCheck,
     desc: "Verifikator SHS, akses website dikhususkan ke Usulan SHS",
   },
@@ -1933,7 +1951,10 @@ const AdminPanel = () => {
                           <Select
                             value={c.status}
                             onValueChange={(val) =>
-                              updateComplaintStatus(c.id, val as any, { handler_name: user.username })
+                              updateComplaintStatus(c.id, {
+                                status: val as any,
+                                handler_name: user?.username,
+                              })
                             }
                           >
                             <SelectTrigger className="w-36 text-xs h-8 bg-slate-50">
@@ -2038,7 +2059,9 @@ const AdminPanel = () => {
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-800 text-xs">#{t.ticket_number} - {t.title}</span>
+                          <span className="font-bold text-slate-800 text-xs">
+                            #{t.ticket_number} - {t.category === 'hardware' ? 'Perangkat Keras' : 'Software / Jaringan'}
+                          </span>
                           <Badge
                             className={
                               t.status === "completed"
@@ -2056,7 +2079,7 @@ const AdminPanel = () => {
                         </div>
                         <p className="text-xs text-slate-600">{t.description}</p>
                         <div className="text-[11px] text-slate-400">
-                          Unit: {t.bidang} ({t.unit_name}) · Pelapor: {t.penanggung_jawab} · {t.contact_wa}
+                          Unit: {t.bidang} ({t.unit_name}) · Pelapor: {t.penanggung_jawab}
                         </div>
                       </div>
 
@@ -2064,7 +2087,7 @@ const AdminPanel = () => {
                         <Select
                           value={t.status}
                           onValueChange={(val) =>
-                            updateITTicket(t.id, { status: val as any, teknisi_name: user.username })
+                            updateITTicket(t.id, val as any, undefined, user?.username)
                           }
                         >
                           <SelectTrigger className="w-40 text-xs h-8 bg-slate-50">
