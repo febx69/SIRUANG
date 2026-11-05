@@ -1191,10 +1191,19 @@ const AdminPanel = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="puskesmas">
-                          🏥 Puskesmas (Menu Website Terkunci HANYA SHS)
+                          🏥 Puskesmas (Pengusul PBPU BP & SHS)
+                        </SelectItem>
+                        <SelectItem value="rsud">
+                          🏥 RSUD (Pengusul PBPU BP)
+                        </SelectItem>
+                        <SelectItem value="dinsos">
+                          🏛️ Dinas Sosial (Pengusul PBPU BP)
+                        </SelectItem>
+                        <SelectItem value="dukcapil">
+                          🆔 Dukcapil (Verifikasi & Validasi NIK)
                         </SelectItem>
                         <SelectItem value="pengurus_barang">
-                          📦 Pengurus Barang (Verifikator SHS, Menu Terkunci HANYA SHS)
+                          📦 Pengurus Barang (Verifikator SHS)
                         </SelectItem>
                         <SelectItem value="bidang">
                           🏢 Bidang Dinkes (Akses Ruangan, Mobil, Zoom, IT, SHS)
@@ -1393,7 +1402,10 @@ const AdminPanel = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="puskesmas">🏥 Puskesmas (Terkunci HANYA SHS)</SelectItem>
+                        <SelectItem value="puskesmas">🏥 Puskesmas (Pengusul PBPU BP & SHS)</SelectItem>
+                        <SelectItem value="rsud">🏥 RSUD (Pengusul PBPU BP)</SelectItem>
+                        <SelectItem value="dinsos">🏛️ Dinas Sosial (Pengusul PBPU BP)</SelectItem>
+                        <SelectItem value="dukcapil">🆔 Dukcapil (Verifikasi & Validasi NIK)</SelectItem>
                         <SelectItem value="pengurus_barang">📦 Pengurus Barang (Verifikator SHS)</SelectItem>
                         <SelectItem value="bidang">🏢 Bidang Dinkes (Akses Penuh Dinas)</SelectItem>
                         <SelectItem value="ob">🧹 Petugas OB (Kebersihan)</SelectItem>
