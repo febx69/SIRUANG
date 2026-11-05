@@ -105,7 +105,7 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
   const [submitterUnit, setSubmitterUnit] = useState(() => {
     if (isDinsosUser) return 'Dinas Sosial Kabupaten Pamekasan';
     if (isRsudUser) return PAMEKASAN_RSUD[0] || 'RSUD SMART';
-    return PAMEKASAN_PUSKESMAS[0] || 'Puskesmas Proppo';
+    return PAMEKASAN_PUSKESMAS[0] || 'UPT Puskesmas Bandaran';
   });
 
   // Data Calon Peserta
