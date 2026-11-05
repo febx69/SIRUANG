@@ -1,5 +1,5 @@
 // src/components/PBPU/PBPUDocumentViewerModal.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,8 +7,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, FileText, Image as ImageIcon } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Download, ExternalLink, FileText, Image as ImageIcon, Cloud } from 'lucide-react';
 import { PBPUDocument } from '@/types/pbpu';
+import {
+  isGoogleDriveUrl,
+  extractGoogleDriveFileId,
+  getGoogleDrivePreviewUrl,
+  getGoogleDriveDirectImageUrl,
+  getGoogleDriveDownloadUrl,
+} from '@/lib/googleDriveHelper';
 
 interface PBPUDocumentViewerModalProps {
   document: PBPUDocument | null;
@@ -23,10 +31,15 @@ export const PBPUDocumentViewerModal: React.FC<PBPUDocumentViewerModalProps> = (
 }) => {
   if (!document) return null;
 
+  const [imageError, setImageError] = useState(false);
+
+  const isFromDrive = isGoogleDriveUrl(document.file_url);
+  const driveFileId = isFromDrive ? extractGoogleDriveFileId(document.file_url) : null;
+
   const isImage =
     document.file_url.startsWith('data:image/') ||
     document.mime_type?.startsWith('image/') ||
-    /\.(jpg|jpeg|png|webp|gif)$/i.test(document.file_name);
+    /\.(jpg|jpeg|png|webp|gif|bmp)$/i.test(document.file_name);
 
   const isPdf =
     document.file_url.startsWith('data:application/pdf') ||
@@ -51,6 +64,12 @@ export const PBPUDocumentViewerModal: React.FC<PBPUDocumentViewerModalProps> = (
   };
 
   const handleDownload = () => {
+    if (isFromDrive && driveFileId) {
+      const downloadLink = getGoogleDriveDownloadUrl(document.file_url);
+      window.open(downloadLink, '_blank');
+      return;
+    }
+
     const a = window.document.createElement('a');
     a.href = document.file_url;
     a.download = document.file_name || `dokumen-${document.document_type.toLowerCase()}`;
@@ -59,19 +78,37 @@ export const PBPUDocumentViewerModal: React.FC<PBPUDocumentViewerModalProps> = (
     window.document.body.removeChild(a);
   };
 
+  // Tentukan URL untuk rendering
+  const renderImageUrl = isFromDrive
+    ? getGoogleDriveDirectImageUrl(document.file_url)
+    : document.file_url;
+
+  const renderIframeUrl = isFromDrive
+    ? getGoogleDrivePreviewUrl(document.file_url)
+    : document.file_url;
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-6">
-        <DialogHeader className="pb-3 border-b flex flex-row items-center justify-between">
-          <div>
-            <span className="text-[11px] font-bold text-teal-600 uppercase tracking-wider bg-teal-50 px-2 py-0.5 rounded-full">
-              {getDocTypeLabel(document.document_type)}
-            </span>
-            <DialogTitle className="text-lg font-bold text-slate-800 mt-1">
+      <DialogContent className="max-w-4xl max-h-[92vh] flex flex-col p-6">
+        <DialogHeader className="pb-3 border-b flex flex-row items-center justify-between gap-2">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-bold text-teal-700 uppercase tracking-wider bg-teal-50 border border-teal-200 px-2.5 py-0.5 rounded-full">
+                {getDocTypeLabel(document.document_type)}
+              </span>
+              {isFromDrive && (
+                <Badge className="bg-sky-100 text-sky-800 border-sky-300 text-[10px] font-bold gap-1">
+                  <Cloud size={11} className="text-sky-600" />
+                  Google Drive Storage
+                </Badge>
+              )}
+            </div>
+            <DialogTitle className="text-base sm:text-lg font-bold text-slate-800">
               {document.file_name}
             </DialogTitle>
           </div>
-          <div className="flex items-center gap-2 pr-6">
+
+          <div className="flex items-center gap-2 pr-6 shrink-0">
             <Button
               size="sm"
               variant="outline"
@@ -85,28 +122,37 @@ export const PBPUDocumentViewerModal: React.FC<PBPUDocumentViewerModalProps> = (
                 href={document.file_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center h-8 px-2.5 rounded-md border text-xs font-semibold text-slate-600 hover:bg-slate-100 gap-1"
+                className="inline-flex items-center justify-center h-8 px-2.5 rounded-md border text-xs font-semibold text-slate-700 hover:bg-slate-100 gap-1"
               >
-                <ExternalLink size={14} /> Buka Tab
+                <ExternalLink size={14} /> {isFromDrive ? 'Buka di Drive' : 'Buka Tab'}
               </a>
             )}
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-auto py-4 flex items-center justify-center min-h-[300px] bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-          {isImage ? (
-            <img
-              src={document.file_url}
-              alt={document.file_name}
-              className="max-h-[65vh] max-w-full object-contain rounded-lg shadow-sm"
-            />
-          ) : isPdf ? (
-            <iframe
-              src={document.file_url}
-              title={document.file_name}
-              className="w-full h-[65vh] rounded-lg border border-slate-200"
-            />
+        <div className="flex-1 overflow-auto py-3 flex items-center justify-center min-h-[420px] bg-slate-900/5 rounded-2xl border border-slate-200/80 p-2">
+          {/* 1. JIKA GAMBAR (KTP / KK) */}
+          {isImage && !imageError ? (
+            <div className="w-full h-full flex flex-col items-center justify-center">
+              <img
+                src={renderImageUrl}
+                alt={document.file_name}
+                onError={() => setImageError(true)}
+                className="max-h-[68vh] max-w-full object-contain rounded-xl shadow-md border bg-white"
+              />
+            </div>
+          ) : isPdf || (isFromDrive && imageError) ? (
+            /* 2. JIKA PDF ATAU DOKUMEN GOOGLE DRIVE (EMBED IFRAME) */
+            <div className="w-full h-full min-h-[460px] flex flex-col">
+              <iframe
+                src={renderIframeUrl}
+                title={document.file_name}
+                className="w-full h-[68vh] rounded-xl border border-slate-300 bg-white shadow-sm"
+                allow="autoplay"
+              />
+            </div>
           ) : (
+            /* 3. FORMAT LAINNYA */
             <div className="text-center p-8">
               <FileText size={48} className="mx-auto text-slate-400 mb-3" />
               <p className="text-sm font-semibold text-slate-700">{document.file_name}</p>
@@ -124,3 +170,4 @@ export const PBPUDocumentViewerModal: React.FC<PBPUDocumentViewerModalProps> = (
   );
 };
 
+export default PBPUDocumentViewerModal;

@@ -48,8 +48,10 @@ import {
   X,
   RotateCcw,
   AlertTriangle,
+  Cloud,
 } from 'lucide-react';
 import { PBPUDocumentViewerModal } from './PBPUDocumentViewerModal';
+import { isGoogleDriveUrl } from '@/lib/googleDriveHelper';
 
 interface PBPUVerificationPanelProps {
   submissions: PBPUSubmission[];
@@ -631,9 +633,16 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
                           className="p-3 rounded-xl border border-slate-200 bg-white hover:border-teal-400 hover:shadow-sm transition-all flex flex-col justify-between gap-2"
                         >
                           <div>
-                            <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 uppercase">
-                              {doc.document_type}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 uppercase">
+                                {doc.document_type}
+                              </span>
+                              {isGoogleDriveUrl(doc.file_url) && (
+                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-full">
+                                  <Cloud size={10} className="text-sky-600" /> Google Drive
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs font-bold text-slate-800 mt-1 line-clamp-1" title={doc.file_name}>
                               {doc.file_name}
                             </p>

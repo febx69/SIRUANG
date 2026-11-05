@@ -14,6 +14,13 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
   Upload,
   CheckCircle2,
   AlertCircle,
@@ -28,6 +35,9 @@ import {
   RotateCcw,
   AlertTriangle,
   XCircle,
+  Cloud,
+  Link as LinkIcon,
+  FolderOpen,
 } from 'lucide-react';
 import { User } from '@/hooks/useSupabaseAuth';
 import {
@@ -41,6 +51,13 @@ import {
   PUSKESMAS_CONDITION_CATEGORIES,
 } from '@/types/pbpu';
 import { compressImage } from '@/lib/imageCompression';
+import {
+  isGoogleDriveUrl,
+  extractGoogleDriveFileId,
+  getGoogleDrivePreviewUrl,
+  uploadFileToGoogleDrive,
+  DEFAULT_GAS_WEBAPP_URL,
+} from '@/lib/googleDriveHelper';
 
 interface PBPUSubmissionFormProps {
   user: User | null;
@@ -124,6 +141,13 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
   const [documents, setDocuments] = useState<UploadedDocState[]>([]);
   const [uploadError, setUploadError] = useState('');
 
+  // State untuk Integrasi Google Drive
+  const [driveModalDocType, setDriveModalDocType] = useState<PBPUDocumentType | null>(null);
+  const [driveInputLink, setDriveInputLink] = useState('');
+  const [driveInputName, setDriveInputName] = useState('');
+  const [driveError, setDriveError] = useState('');
+  const [isDriveUploading, setIsDriveUploading] = useState(false);
+
   // Sinkronisasi data saat editSubmission aktif (Mode Perbaikan Berkas Ditolak)
   useEffect(() => {
     if (editSubmission) {
@@ -161,6 +185,51 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
     }
   }, [editSubmission]);
 
+  // Handler Tautkan Link Google Drive secara manual
+  const handleLinkGoogleDrive = () => {
+    if (!driveModalDocType) return;
+    setDriveError('');
+
+    const cleanLink = driveInputLink.trim();
+    if (!cleanLink) {
+      setDriveError('Link Google Drive wajib diisi.');
+      return;
+    }
+
+    if (!isGoogleDriveUrl(cleanLink)) {
+      setDriveError('Format URL harus berupa tautan Google Drive (contoh: https://drive.google.com/file/d/...)');
+      return;
+    }
+
+    const fileId = extractGoogleDriveFileId(cleanLink);
+    if (!fileId) {
+      setDriveError('Tidak dapat menemukan File ID dari tautan Google Drive yang diberikan.');
+      return;
+    }
+
+    const previewUrl = getGoogleDrivePreviewUrl(cleanLink);
+    const fileName =
+      driveInputName.trim() ||
+      `Dokumen_${driveModalDocType}_GoogleDrive.pdf`;
+
+    setDocuments((prev) => {
+      const filtered = prev.filter((d) => d.document_type !== driveModalDocType);
+      return [
+        ...filtered,
+        {
+          document_type: driveModalDocType,
+          file_name: fileName,
+          file_url: previewUrl,
+          mime_type: 'application/pdf',
+        },
+      ];
+    });
+
+    setDriveModalDocType(null);
+    setDriveInputLink('');
+    setDriveInputName('');
+  };
+
   // File upload handler
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, docType: PBPUDocumentType) => {
     const file = e.target.files?.[0];
@@ -179,19 +248,35 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
       let fileSize = file.size;
       const mimeType = file.type || 'application/octet-stream';
 
-      if (file.type.startsWith('image/')) {
-        // Kompresi gambar otomatis
-        const compressed = await compressImage(file, 1600, 1600, 0.8);
-        fileUrl = compressed.dataUrl;
-        fileSize = compressed.file.size;
-      } else {
-        // PDF atau dokumen lain: baca sebagai Base64 Data URL
-        fileUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
+      // Jika URL Google Apps Script Web App tersedia, upload langsung ke Google Drive!
+      if (DEFAULT_GAS_WEBAPP_URL) {
+        setIsDriveUploading(true);
+        const driveRes = await uploadFileToGoogleDrive(file);
+        setIsDriveUploading(false);
+
+        if (driveRes.success && driveRes.previewUrl) {
+          fileUrl = driveRes.previewUrl;
+        } else {
+          console.warn('Gagal upload ke Google Drive, beralih ke penyimpanan lokal:', driveRes.error);
+        }
+      }
+
+      // Jika belum diupload ke Drive (atau belum disetel Web App URL), gunakan Base64
+      if (!fileUrl) {
+        if (file.type.startsWith('image/')) {
+          // Kompresi gambar otomatis
+          const compressed = await compressImage(file, 1600, 1600, 0.8);
+          fileUrl = compressed.dataUrl;
+          fileSize = compressed.file.size;
+        } else {
+          // PDF atau dokumen lain: baca sebagai Base64 Data URL
+          fileUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        }
       }
 
       setDocuments((prev) => {
@@ -211,6 +296,7 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
     } catch (err: any) {
       setUploadError(`Gagal memproses file: ${err.message}`);
     } finally {
+      setIsDriveUploading(false);
       e.target.value = '';
     }
   };
@@ -769,11 +855,20 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 {/* Upload KTP */}
-                <div className="bg-white p-3 rounded-lg border border-slate-200 flex items-center justify-between">
-                  <div className="overflow-hidden pr-2">
+                <div className="bg-white p-3 rounded-lg border border-slate-200 flex items-center justify-between gap-2">
+                  <div className="overflow-hidden pr-1">
                     <p className="text-xs font-semibold text-slate-700">Kartu Tanda Penduduk (KTP)</p>
-                    <p className="text-[10px] text-slate-400 truncate">
-                      {hasDoc('KTP') ? getDoc('KTP')?.file_name : 'Belum diunggah'}
+                    <p className="text-[10px] text-slate-500 truncate flex items-center gap-1">
+                      {hasDoc('KTP') ? (
+                        <>
+                          {isGoogleDriveUrl(getDoc('KTP')?.file_url) && (
+                            <Cloud size={11} className="text-sky-600 shrink-0" />
+                          )}
+                          {getDoc('KTP')?.file_name}
+                        </>
+                      ) : (
+                        'Belum diunggah'
+                      )}
                     </p>
                   </div>
                   {hasDoc('KTP') ? (
@@ -787,24 +882,50 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
                       <X size={15} />
                     </Button>
                   ) : (
-                    <label className="cursor-pointer inline-flex items-center justify-center h-8 px-2.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium gap-1">
-                      <Upload size={13} /> Unggah
-                      <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        className="hidden"
-                        onChange={(e) => handleFileUpload(e, 'KTP')}
-                      />
-                    </label>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <label className="cursor-pointer inline-flex items-center justify-center h-8 px-2.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium gap-1">
+                        <Upload size={13} /> Unggah
+                        <input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          className="hidden"
+                          onChange={(e) => handleFileUpload(e, 'KTP')}
+                        />
+                      </label>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setDriveModalDocType('KTP');
+                          setDriveInputLink('');
+                          setDriveInputName('');
+                          setDriveError('');
+                        }}
+                        className="h-8 px-2 text-sky-700 border-sky-300 hover:bg-sky-50 text-[11px] font-semibold gap-1"
+                        title="Tautkan dari Google Drive"
+                      >
+                        <Cloud size={13} /> Drive
+                      </Button>
+                    </div>
                   )}
                 </div>
 
                 {/* Upload KK */}
-                <div className="bg-white p-3 rounded-lg border border-slate-200 flex items-center justify-between">
-                  <div className="overflow-hidden pr-2">
+                <div className="bg-white p-3 rounded-lg border border-slate-200 flex items-center justify-between gap-2">
+                  <div className="overflow-hidden pr-1">
                     <p className="text-xs font-semibold text-slate-700">Kartu Keluarga (KK)</p>
-                    <p className="text-[10px] text-slate-400 truncate">
-                      {hasDoc('KK') ? getDoc('KK')?.file_name : 'Belum diunggah'}
+                    <p className="text-[10px] text-slate-500 truncate flex items-center gap-1">
+                      {hasDoc('KK') ? (
+                        <>
+                          {isGoogleDriveUrl(getDoc('KK')?.file_url) && (
+                            <Cloud size={11} className="text-sky-600 shrink-0" />
+                          )}
+                          {getDoc('KK')?.file_name}
+                        </>
+                      ) : (
+                        'Belum diunggah'
+                      )}
                     </p>
                   </div>
                   {hasDoc('KK') ? (
@@ -818,15 +939,32 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
                       <X size={15} />
                     </Button>
                   ) : (
-                    <label className="cursor-pointer inline-flex items-center justify-center h-8 px-2.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium gap-1">
-                      <Upload size={13} /> Unggah
-                      <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        className="hidden"
-                        onChange={(e) => handleFileUpload(e, 'KK')}
-                      />
-                    </label>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <label className="cursor-pointer inline-flex items-center justify-center h-8 px-2.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium gap-1">
+                        <Upload size={13} /> Unggah
+                        <input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          className="hidden"
+                          onChange={(e) => handleFileUpload(e, 'KK')}
+                        />
+                      </label>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setDriveModalDocType('KK');
+                          setDriveInputLink('');
+                          setDriveInputName('');
+                          setDriveError('');
+                        }}
+                        className="h-8 px-2 text-sky-700 border-sky-300 hover:bg-sky-50 text-[11px] font-semibold gap-1"
+                        title="Tautkan dari Google Drive"
+                      >
+                        <Cloud size={13} /> Drive
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -834,7 +972,7 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
 
             {/* 2. Dokumen Kategori Khusus */}
             {channel === 'PUSKESMAS' && isKondisiTertentu && (
-              <div className="p-4 rounded-xl border border-teal-200 bg-teal-50/40 flex items-center justify-between">
+              <div className="p-4 rounded-xl border border-teal-200 bg-teal-50/40 flex items-center justify-between gap-2">
                 <div>
                   <p className="text-xs font-bold text-teal-950">
                     B. Surat Keterangan Diagnosa DPJP *
@@ -843,7 +981,10 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
                     Surat resmi diagnosa penyakit kronis/ibu hamil/gadart bertandatangan DPJP.
                   </p>
                   {hasDoc('DIAGNOSA_DPJP') && (
-                    <p className="text-[10px] text-teal-600 font-mono mt-1">
+                    <p className="text-[10px] text-teal-700 font-mono mt-1 flex items-center gap-1">
+                      {isGoogleDriveUrl(getDoc('DIAGNOSA_DPJP')?.file_url) && (
+                        <Cloud size={11} className="text-sky-600 shrink-0" />
+                      )}
                       File: {getDoc('DIAGNOSA_DPJP')?.file_name}
                     </p>
                   )}
@@ -859,21 +1000,38 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
                     <X size={15} />
                   </Button>
                 ) : (
-                  <label className="cursor-pointer inline-flex items-center justify-center h-8 px-3 rounded-md bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold gap-1.5 shadow-sm">
-                    <Upload size={13} /> Unggah Surat
-                    <input
-                      type="file"
-                      accept="image/*,application/pdf"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(e, 'DIAGNOSA_DPJP')}
-                    />
-                  </label>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <label className="cursor-pointer inline-flex items-center justify-center h-8 px-3 rounded-md bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold gap-1.5 shadow-sm">
+                      <Upload size={13} /> Unggah Surat
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(e, 'DIAGNOSA_DPJP')}
+                      />
+                    </label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setDriveModalDocType('DIAGNOSA_DPJP');
+                        setDriveInputLink('');
+                        setDriveInputName('');
+                        setDriveError('');
+                      }}
+                      className="h-8 px-2.5 text-sky-700 border-sky-300 hover:bg-sky-50 text-xs font-semibold gap-1"
+                      title="Tautkan dari Google Drive"
+                    >
+                      <Cloud size={13} /> Drive
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
 
             {channel === 'PUSKESMAS' && !isKondisiTertentu && (
-              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 flex items-center justify-between">
+              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 flex items-center justify-between gap-2">
                 <div>
                   <p className="text-xs font-bold text-emerald-950">
                     B. Surat Keterangan Tidak Mampu (SKTM) *
@@ -882,7 +1040,10 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
                     Surat keterangan tidak mampu yang diterbitkan oleh Kepala Desa/Kelurahan.
                   </p>
                   {hasDoc('SKTM') && (
-                    <p className="text-[10px] text-emerald-600 font-mono mt-1">
+                    <p className="text-[10px] text-emerald-700 font-mono mt-1 flex items-center gap-1">
+                      {isGoogleDriveUrl(getDoc('SKTM')?.file_url) && (
+                        <Cloud size={11} className="text-sky-600 shrink-0" />
+                      )}
                       File: {getDoc('SKTM')?.file_name}
                     </p>
                   )}
@@ -898,21 +1059,38 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
                     <X size={15} />
                   </Button>
                 ) : (
-                  <label className="cursor-pointer inline-flex items-center justify-center h-8 px-3 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold gap-1.5 shadow-sm">
-                    <Upload size={13} /> Unggah SKTM
-                    <input
-                      type="file"
-                      accept="image/*,application/pdf"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(e, 'SKTM')}
-                    />
-                  </label>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <label className="cursor-pointer inline-flex items-center justify-center h-8 px-3 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold gap-1.5 shadow-sm">
+                      <Upload size={13} /> Unggah SKTM
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(e, 'SKTM')}
+                      />
+                    </label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setDriveModalDocType('SKTM');
+                        setDriveInputLink('');
+                        setDriveInputName('');
+                        setDriveError('');
+                      }}
+                      className="h-8 px-2.5 text-sky-700 border-sky-300 hover:bg-sky-50 text-xs font-semibold gap-1"
+                      title="Tautkan dari Google Drive"
+                    >
+                      <Cloud size={13} /> Drive
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
 
             {channel === 'DINSOS' && (
-              <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/40 flex items-center justify-between">
+              <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/40 flex items-center justify-between gap-2">
                 <div>
                   <p className="text-xs font-bold text-blue-950">
                     B. Bukti Data Desil 1–5 *
@@ -921,7 +1099,10 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
                     Dokumen penetapan/keterangan Desil 1–5 dari Dinas Sosial.
                   </p>
                   {hasDoc('BUKTI_DESIL') && (
-                    <p className="text-[10px] text-blue-600 font-mono mt-1">
+                    <p className="text-[10px] text-blue-700 font-mono mt-1 flex items-center gap-1">
+                      {isGoogleDriveUrl(getDoc('BUKTI_DESIL')?.file_url) && (
+                        <Cloud size={11} className="text-sky-600 shrink-0" />
+                      )}
                       File: {getDoc('BUKTI_DESIL')?.file_name}
                     </p>
                   )}
@@ -937,15 +1118,32 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
                     <X size={15} />
                   </Button>
                 ) : (
-                  <label className="cursor-pointer inline-flex items-center justify-center h-8 px-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold gap-1.5 shadow-sm">
-                    <Upload size={13} /> Unggah Bukti Desil
-                    <input
-                      type="file"
-                      accept="image/*,application/pdf"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(e, 'BUKTI_DESIL')}
-                    />
-                  </label>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <label className="cursor-pointer inline-flex items-center justify-center h-8 px-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold gap-1.5 shadow-sm">
+                      <Upload size={13} /> Unggah Bukti Desil
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(e, 'BUKTI_DESIL')}
+                      />
+                    </label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setDriveModalDocType('BUKTI_DESIL');
+                        setDriveInputLink('');
+                        setDriveInputName('');
+                        setDriveError('');
+                      }}
+                      className="h-8 px-2.5 text-sky-700 border-sky-300 hover:bg-sky-50 text-xs font-semibold gap-1"
+                      title="Tautkan dari Google Drive"
+                    >
+                      <Cloud size={13} /> Drive
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
@@ -1059,6 +1257,86 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
         </div>
       </div>
     </form>
+
+    {/* DIALOG TAUTKAN LINK GOOGLE DRIVE */}
+    <Dialog
+      open={Boolean(driveModalDocType)}
+      onOpenChange={(open) => !open && setDriveModalDocType(null)}
+    >
+      <DialogContent className="max-w-md p-6">
+        <DialogHeader>
+          <div className="flex items-center gap-2 text-sky-700">
+            <Cloud size={20} />
+            <DialogTitle className="text-base font-bold text-slate-800">
+              Tautkan Berkas dari Google Drive
+            </DialogTitle>
+          </div>
+        </DialogHeader>
+
+        <div className="space-y-4 pt-2">
+          <div className="p-3 bg-sky-50 rounded-xl border border-sky-200 text-xs text-sky-900 space-y-1">
+            <p className="font-bold">💡 Petunjuk Berbagi Google Drive:</p>
+            <p className="text-[11px] leading-relaxed text-sky-800">
+              1. Buka file di Google Drive $\rightarrow$ klik tombol <strong>Bagikan (Share)</strong>.
+              <br />
+              2. Ubah akses umum menjadi <strong>"Siapa saja yang memiliki link dapat melihat"</strong>.
+              <br />
+              3. Salin tautan lalu tempelkan pada kolom di bawah.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-slate-700">
+              Tautan / URL Berbagi Google Drive *
+            </Label>
+            <Input
+              value={driveInputLink}
+              onChange={(e) => setDriveInputLink(e.target.value)}
+              placeholder="https://drive.google.com/file/d/1BxiMVs0XRA5.../view?usp=sharing"
+              className="font-mono text-xs"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-slate-700">
+              Nama Dokumen / Keterangan (Opsional)
+            </Label>
+            <Input
+              value={driveInputName}
+              onChange={(e) => setDriveInputName(e.target.value)}
+              placeholder={`Contoh: Berkas_${driveModalDocType || 'Dokumen'}_Warga.pdf`}
+              className="text-xs"
+            />
+          </div>
+
+          {driveError && (
+            <p className="text-xs text-rose-600 font-semibold flex items-center gap-1">
+              <AlertCircle size={13} /> {driveError}
+            </p>
+          )}
+        </div>
+
+        <DialogFooter className="pt-3 border-t flex flex-row items-center justify-between w-full">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setDriveModalDocType(null)}
+            className="text-xs"
+          >
+            Batal
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleLinkGoogleDrive}
+            className="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold gap-1.5"
+          >
+            <Cloud size={14} /> Tautkan Berkas
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
   );
 };
