@@ -45,7 +45,7 @@ export const useUserManagement = () => {
   const addUser = async (payload: Omit<ManagedUser, 'id' | 'created_at'>) => {
     // Normalisasi username
     let cleanUsername = payload.username.trim().toLowerCase().replace(/[\s-]/g, '_');
-    if (payload.role === 'puskesmas' && !cleanUsername.startsWith('puskesmas_') && !cleanUsername.startsWith('pkm_')) {
+    if (payload.role === 'puskesmas' && cleanUsername !== 'puskesmas' && !cleanUsername.startsWith('puskesmas_') && !cleanUsername.startsWith('pkm_')) {
       cleanUsername = `puskesmas_${cleanUsername}`;
     }
 
@@ -67,7 +67,13 @@ export const useUserManagement = () => {
     } else if (payload.role === 'ob') {
       dbRole = 'user';
       dbIsOb = true;
-    } else if (payload.role === 'puskesmas' || payload.role === 'pengurus_barang') {
+    } else if (
+      payload.role === 'puskesmas' ||
+      payload.role === 'rsud' ||
+      payload.role === 'dinsos' ||
+      payload.role === 'dukcapil' ||
+      payload.role === 'pengurus_barang'
+    ) {
       dbRole = 'user';
       dbIsOb = false;
     } else {
@@ -97,7 +103,7 @@ export const useUserManagement = () => {
 
     if (payload.username !== undefined) {
       let cleanUsername = payload.username.trim().toLowerCase().replace(/[\s-]/g, '_');
-      if (payload.role === 'puskesmas' && !cleanUsername.startsWith('puskesmas_') && !cleanUsername.startsWith('pkm_')) {
+      if (payload.role === 'puskesmas' && cleanUsername !== 'puskesmas' && !cleanUsername.startsWith('puskesmas_') && !cleanUsername.startsWith('pkm_')) {
         cleanUsername = `puskesmas_${cleanUsername}`;
       }
       updateData.username = cleanUsername;
@@ -117,7 +123,13 @@ export const useUserManagement = () => {
       } else if (payload.role === 'ob') {
         updateData.role = 'user';
         updateData.is_ob = true;
-      } else if (payload.role === 'puskesmas' || payload.role === 'pengurus_barang') {
+      } else if (
+        payload.role === 'puskesmas' ||
+        payload.role === 'rsud' ||
+        payload.role === 'dinsos' ||
+        payload.role === 'dukcapil' ||
+        payload.role === 'pengurus_barang'
+      ) {
         updateData.role = 'user';
         updateData.is_ob = false;
       } else {

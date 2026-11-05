@@ -15,6 +15,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 const roleConfig: Record<string, { label: string; color: string; icon: any }> = {
   admin: { label: 'Admin', color: 'bg-red-100 text-red-700 border-red-200', icon: ShieldCheck },
   bidang: { label: 'Bidang', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: Building2 },
+  puskesmas: { label: 'Puskesmas', color: 'bg-teal-100 text-teal-700 border-teal-200', icon: Building2 },
+  rsud: { label: 'RSUD', color: 'bg-cyan-100 text-cyan-700 border-cyan-200', icon: Building2 },
+  dinsos: { label: 'Dinsos', color: 'bg-indigo-100 text-indigo-700 border-indigo-200', icon: Building2 },
+  dukcapil: { label: 'Dukcapil', color: 'bg-purple-100 text-purple-700 border-purple-200', icon: ShieldCheck },
+  pengurus_barang: { label: 'Pengurus Barang', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: Building2 },
   ob: { label: 'Petugas OB', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: Sparkles },
   user: { label: 'User', color: 'bg-gray-100 text-gray-700 border-gray-200', icon: User },
 };
@@ -170,6 +175,11 @@ const UserManagementPanel = () => {
                 <SelectTrigger className="bg-slate-50"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="bidang">Bidang (Akses Usulan Khusus Bidang Sendiri)</SelectItem>
+                  <SelectItem value="puskesmas">Puskesmas (Pengusul PBPU BP)</SelectItem>
+                  <SelectItem value="rsud">RSUD (Pengusul PBPU BP)</SelectItem>
+                  <SelectItem value="dinsos">Dinas Sosial (Pengusul PBPU BP)</SelectItem>
+                  <SelectItem value="dukcapil">Dukcapil (Verifikasi NIK)</SelectItem>
+                  <SelectItem value="pengurus_barang">Pengurus Barang</SelectItem>
                   <SelectItem value="user">User (hanya lihat & input)</SelectItem>
                   <SelectItem value="ob">Petugas OB (fokus kebersihan)</SelectItem>
                   <SelectItem value="admin">Admin (akses penuh)</SelectItem>
@@ -223,6 +233,11 @@ const UserManagementPanel = () => {
                 <SelectTrigger className="bg-slate-50"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="bidang">Bidang (edit/hapus milik sendiri)</SelectItem>
+                  <SelectItem value="puskesmas">Puskesmas (Pengusul PBPU BP)</SelectItem>
+                  <SelectItem value="rsud">RSUD (Pengusul PBPU BP)</SelectItem>
+                  <SelectItem value="dinsos">Dinas Sosial (Pengusul PBPU BP)</SelectItem>
+                  <SelectItem value="dukcapil">Dukcapil (Verifikasi NIK)</SelectItem>
+                  <SelectItem value="pengurus_barang">Pengurus Barang</SelectItem>
                   <SelectItem value="user">User (hanya lihat & input)</SelectItem>
                   <SelectItem value="ob">Petugas OB (fokus kebersihan)</SelectItem>
                   <SelectItem value="admin">Admin (akses penuh)</SelectItem>
