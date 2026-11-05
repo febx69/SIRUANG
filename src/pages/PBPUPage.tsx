@@ -14,13 +14,12 @@ import {
   BarChart3,
   FileSpreadsheet,
   HeartHandshake,
-  Building,
   ArrowLeft,
   History,
   FileText,
   Clock,
-  TrendingUp,
 } from 'lucide-react';
+import { PBPUSubmission } from '@/types/pbpu';
 import { PBPUVerificationPanel } from '@/components/PBPU/PBPUVerificationPanel';
 import { PBPUSubmissionForm } from '@/components/PBPU/PBPUSubmissionForm';
 import { PBPUNikFollowUpPanel } from '@/components/PBPU/PBPUNikFollowUpPanel';
@@ -53,7 +52,7 @@ export const PBPUPage: React.FC = () => {
   const isVerifier = isYankes || isAdmin;
 
   // State untuk menangani usulan yang ditolak dan sedang diperbaiki oleh pengusul
-  const [editingSubmission, setEditingSubmission] = useState<any | null>(null);
+  const [editingSubmission, setEditingSubmission] = useState<PBPUSubmission | null>(null);
 
   // Tab awal: baca query param ?tab= atau gunakan default per peran
   const queryTab = searchParams.get('tab');
@@ -64,7 +63,7 @@ export const PBPUPage: React.FC = () => {
     if (queryTab && queryTab !== activeTab) {
       setActiveTab(queryTab);
     }
-  }, [queryTab]);
+  }, [queryTab, activeTab]);
 
   const handleTabChange = (val: string) => {
     setActiveTab(val);

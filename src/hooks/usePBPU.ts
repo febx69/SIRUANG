@@ -6,7 +6,6 @@ import { toast } from '@/components/ui/use-toast';
 import {
   PBPUSubmission,
   PBPUSubmissionPayload,
-  PBPUVerificationStatus,
   PBPUNikStatus,
   PBPUDocument,
   PBPUNikHistory,
@@ -20,7 +19,9 @@ export const generateUUID = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     try {
       return crypto.randomUUID();
-    } catch {}
+    } catch {
+      // Fallback generator manual jika randomUUID gagal atau context tidak aman
+    }
   }
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
@@ -74,7 +75,7 @@ export const usePBPU = (user: User | null) => {
         const allNikHist: PBPUNikHistory[] = nikHistRes.data || [];
         const allStatHist: PBPUStatusHistory[] = statHistRes.data || [];
 
-        const enriched: PBPUSubmission[] = subData.map((s: any) => ({
+        const enriched: PBPUSubmission[] = (subData as unknown as PBPUSubmission[]).map((s) => ({
           ...s,
           documents: allDocs.filter((d) => d.submission_id === s.id),
           nik_history: allNikHist.filter((nh) => nh.submission_id === s.id),
@@ -84,8 +85,9 @@ export const usePBPU = (user: User | null) => {
         setSubmissions(enriched);
         saveLocalSubmissions(enriched);
       }
-    } catch (err: any) {
-      console.warn('Supabase PBPU table fetch notice (using cache/local fallback):', err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn('Supabase PBPU table fetch notice (using cache/local fallback):', msg);
       // Fallback ke local cache
       const cached = getLocalSubmissions();
       setSubmissions(cached);
@@ -357,13 +359,14 @@ export const usePBPU = (user: User | null) => {
       });
 
       return { success: true, regNo };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Terjadi kesalahan sistem';
       toast({
         title: 'Gagal Mengirim Usulan',
-        description: err.message || 'Terjadi kesalahan sistem',
+        description: message,
         variant: 'destructive',
       });
-      return { success: false, error: err.message };
+      return { success: false, error: message };
     } finally {
       setIsSubmitting(false);
     }
@@ -568,13 +571,14 @@ export const usePBPU = (user: User | null) => {
       });
 
       return { success: true };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Terjadi kesalahan sistem';
       toast({
         title: 'Gagal Mengajukan Ulang Usulan',
-        description: err.message,
+        description: message,
         variant: 'destructive',
       });
-      return { success: false, error: err.message };
+      return { success: false, error: message };
     } finally {
       setIsSubmitting(false);
     }
@@ -676,10 +680,11 @@ export const usePBPU = (user: User | null) => {
       });
 
       return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Terjadi kesalahan sistem';
       toast({
         title: 'Gagal Memproses Verifikasi',
-        description: err.message,
+        description: message,
         variant: 'destructive',
       });
       return false;
@@ -790,10 +795,11 @@ export const usePBPU = (user: User | null) => {
       });
 
       return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Terjadi kesalahan sistem';
       toast({
         title: 'Gagal Memperbarui Status NIK',
-        description: err.message,
+        description: message,
         variant: 'destructive',
       });
       return false;
