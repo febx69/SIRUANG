@@ -252,91 +252,93 @@ export const usePBPU = (user: User | null) => {
         ],
       };
 
-      // 1. Simpan ke Supabase
-      try {
-        const { error: dbError } = await supabase.from('pbpu_submissions').insert([
+      // 1. Simpan ke Supabase (Wajib sukses sebelum disimpan ke cache lokal)
+      const { error: dbError } = await supabase.from('pbpu_submissions').insert([
+        {
+          id: newSubmissionRecord.id,
+          registration_no: newSubmissionRecord.registration_no,
+          applicant_name: newSubmissionRecord.applicant_name,
+          nik: newSubmissionRecord.nik,
+          no_kk: newSubmissionRecord.no_kk,
+          birth_place: newSubmissionRecord.birth_place,
+          birth_date: newSubmissionRecord.birth_date,
+          gender: newSubmissionRecord.gender,
+          address: newSubmissionRecord.address,
+          village: newSubmissionRecord.village,
+          district: newSubmissionRecord.district,
+          phone: newSubmissionRecord.phone,
+          submission_channel: newSubmissionRecord.submission_channel,
+          submitter_username: newSubmissionRecord.submitter_username,
+          submitter_unit: newSubmissionRecord.submitter_unit,
+          condition_category: newSubmissionRecord.condition_category,
+          health_facility: newSubmissionRecord.health_facility,
+          dpjp_name: newSubmissionRecord.dpjp_name,
+          desil: newSubmissionRecord.desil,
+          nik_status: newSubmissionRecord.nik_status,
+          nik_followup_note: newSubmissionRecord.nik_followup_note,
+          verification_status: 'MENUNGGU',
+          notes: newSubmissionRecord.notes,
+          created_at: nowStr,
+          updated_at: nowStr,
+        },
+      ]);
+
+      if (dbError) {
+        throw new Error(`Database error: ${dbError.message}`);
+      }
+
+      // Insert Dokumen dengan ID UUID yang valid
+      if (newDocs.length > 0) {
+        const { error: dErr } = await supabase.from('pbpu_documents').insert(
+          newDocs.map((d) => ({
+            id: d.id,
+            submission_id: d.submission_id,
+            document_type: d.document_type,
+            file_name: d.file_name,
+            file_url: d.file_url,
+            file_size: d.file_size,
+            mime_type: d.mime_type,
+            uploaded_by: d.uploaded_by,
+            created_at: d.created_at,
+          }))
+        );
+        if (dErr) {
+          throw new Error(`Dokumen database error: ${dErr.message}`);
+        }
+      }
+
+      // Insert Status History
+      const { error: sErr } = await supabase.from('pbpu_status_history').insert([
+        {
+          id: generateUUID(),
+          submission_id: newSubmissionRecord.id,
+          old_status: 'MENUNGGU',
+          new_status: 'MENUNGGU',
+          reason_or_note: 'Usulan baru diajukan ke Dinas Kesehatan',
+          changed_by: user.username,
+          created_at: nowStr,
+        },
+      ]);
+      if (sErr) {
+        throw new Error(`Status history database error: ${sErr.message}`);
+      }
+
+      // Insert NIK History if Bermasalah
+      if (payload.nik_status === 'BERMASALAH') {
+        const { error: nErr } = await supabase.from('pbpu_nik_history').insert([
           {
-            id: newSubmissionRecord.id,
-            registration_no: newSubmissionRecord.registration_no,
-            applicant_name: newSubmissionRecord.applicant_name,
-            nik: newSubmissionRecord.nik,
-            no_kk: newSubmissionRecord.no_kk,
-            birth_place: newSubmissionRecord.birth_place,
-            birth_date: newSubmissionRecord.birth_date,
-            gender: newSubmissionRecord.gender,
-            address: newSubmissionRecord.address,
-            village: newSubmissionRecord.village,
-            district: newSubmissionRecord.district,
-            phone: newSubmissionRecord.phone,
-            submission_channel: newSubmissionRecord.submission_channel,
-            submitter_username: newSubmissionRecord.submitter_username,
-            submitter_unit: newSubmissionRecord.submitter_unit,
-            condition_category: newSubmissionRecord.condition_category,
-            health_facility: newSubmissionRecord.health_facility,
-            dpjp_name: newSubmissionRecord.dpjp_name,
-            desil: newSubmissionRecord.desil,
-            nik_status: newSubmissionRecord.nik_status,
-            nik_followup_note: newSubmissionRecord.nik_followup_note,
-            verification_status: 'MENUNGGU',
-            notes: newSubmissionRecord.notes,
+            id: generateUUID(),
+            submission_id: newSubmissionRecord.id,
+            old_status: 'BERMASALAH',
+            new_status: 'BERMASALAH',
+            note: 'Pemeriksaan status NIK awal: Bermasalah saat pengajuan',
+            updated_by: user.username,
             created_at: nowStr,
-            updated_at: nowStr,
           },
         ]);
-
-        if (dbError) {
-          console.error('Supabase insert pbpu_submissions error:', dbError);
-        } else {
-          // Insert Dokumen dengan ID UUID yang valid
-          if (newDocs.length > 0) {
-            const { error: dErr } = await supabase.from('pbpu_documents').insert(
-              newDocs.map((d) => ({
-                id: d.id,
-                submission_id: d.submission_id,
-                document_type: d.document_type,
-                file_name: d.file_name,
-                file_url: d.file_url,
-                file_size: d.file_size,
-                mime_type: d.mime_type,
-                uploaded_by: d.uploaded_by,
-                created_at: d.created_at,
-              }))
-            );
-            if (dErr) {
-              console.error('Supabase insert pbpu_documents error:', dErr);
-            }
-          }
-
-          // Insert Status History
-          await supabase.from('pbpu_status_history').insert([
-            {
-              id: generateUUID(),
-              submission_id: newSubmissionRecord.id,
-              old_status: 'MENUNGGU',
-              new_status: 'MENUNGGU',
-              reason_or_note: 'Usulan baru diajukan ke Dinas Kesehatan',
-              changed_by: user.username,
-              created_at: nowStr,
-            },
-          ]);
-
-          // Insert NIK History if Bermasalah
-          if (payload.nik_status === 'BERMASALAH') {
-            await supabase.from('pbpu_nik_history').insert([
-              {
-                id: generateUUID(),
-                submission_id: newSubmissionRecord.id,
-                old_status: 'BERMASALAH',
-                new_status: 'BERMASALAH',
-                note: 'Pemeriksaan status NIK awal: Bermasalah saat pengajuan',
-                updated_by: user.username,
-                created_at: nowStr,
-              },
-            ]);
-          }
+        if (nErr) {
+          throw new Error(`NIK history database error: ${nErr.message}`);
         }
-      } catch (err) {
-        console.warn('Supabase insert fallback notice:', err);
       }
 
       // Update state & local storage
@@ -440,72 +442,78 @@ export const usePBPU = (user: User | null) => {
         created_at: nowStr,
       }));
 
-      // 1. Update di Supabase
-      try {
-        const { error: updateErr } = await supabase
-          .from('pbpu_submissions')
-          .update({
-            applicant_name: payload.applicant_name.trim(),
-            nik: cleanNik,
-            no_kk: payload.no_kk?.trim() || null,
-            birth_place: payload.birth_place.trim(),
-            birth_date: payload.birth_date,
-            gender: payload.gender,
-            address: payload.address.trim(),
-            village: payload.village.trim(),
-            district: payload.district,
-            phone: payload.phone?.trim() || null,
-            condition_category: payload.condition_category || null,
-            health_facility: payload.health_facility || null,
-            dpjp_name: payload.dpjp_name || null,
-            desil: payload.desil || null,
-            nik_status: payload.nik_status,
-            verification_status: 'MENUNGGU', // Reset status kembali ke MENUNGGU
-            rejection_reason: null, // Bersihkan alasan penolakan aktif
-            verifier_username: null,
-            verifier_note: null,
-            verified_at: null,
-            notes: payload.notes || null,
-            updated_at: nowStr,
-          })
-          .eq('id', submissionId);
+      // 1. Update di Supabase (Wajib sukses sebelum cache lokal)
+      const { error: updateErr } = await supabase
+        .from('pbpu_submissions')
+        .update({
+          applicant_name: payload.applicant_name.trim(),
+          nik: cleanNik,
+          no_kk: payload.no_kk?.trim() || null,
+          birth_place: payload.birth_place.trim(),
+          birth_date: payload.birth_date,
+          gender: payload.gender,
+          address: payload.address.trim(),
+          village: payload.village.trim(),
+          district: payload.district,
+          phone: payload.phone?.trim() || null,
+          condition_category: payload.condition_category || null,
+          health_facility: payload.health_facility || null,
+          dpjp_name: payload.dpjp_name || null,
+          desil: payload.desil || null,
+          nik_status: payload.nik_status,
+          verification_status: 'MENUNGGU', // Reset status kembali ke MENUNGGU
+          rejection_reason: null, // Bersihkan alasan penolakan aktif
+          verifier_username: null,
+          verifier_note: null,
+          verified_at: null,
+          notes: payload.notes || null,
+          updated_at: nowStr,
+        })
+        .eq('id', submissionId);
 
-        if (updateErr) console.error('Supabase resubmit update error:', updateErr);
+      if (updateErr) {
+        throw new Error(`Database error: ${updateErr.message}`);
+      }
 
-        // Hapus dokumen lama dan ganti dengan dokumen baru/revisi
-        await supabase.from('pbpu_documents').delete().eq('submission_id', submissionId);
+      // Hapus dokumen lama dan ganti dengan dokumen baru/revisi
+      const { error: delErr } = await supabase.from('pbpu_documents').delete().eq('submission_id', submissionId);
+      if (delErr) {
+        throw new Error(`Gagal hapus dokumen lama di database: ${delErr.message}`);
+      }
 
-        if (newDocs.length > 0) {
-          const { error: dErr } = await supabase.from('pbpu_documents').insert(
-            newDocs.map((d) => ({
-              id: d.id,
-              submission_id: d.submission_id,
-              document_type: d.document_type,
-              file_name: d.file_name,
-              file_url: d.file_url,
-              file_size: d.file_size,
-              mime_type: d.mime_type,
-              uploaded_by: d.uploaded_by,
-              created_at: d.created_at,
-            }))
-          );
-          if (dErr) console.error('Supabase replace documents error:', dErr);
+      if (newDocs.length > 0) {
+        const { error: dErr } = await supabase.from('pbpu_documents').insert(
+          newDocs.map((d) => ({
+            id: d.id,
+            submission_id: d.submission_id,
+            document_type: d.document_type,
+            file_name: d.file_name,
+            file_url: d.file_url,
+            file_size: d.file_size,
+            mime_type: d.mime_type,
+            uploaded_by: d.uploaded_by,
+            created_at: d.created_at,
+          }))
+        );
+        if (dErr) {
+          throw new Error(`Gagal simpan dokumen baru di database: ${dErr.message}`);
         }
+      }
 
-        // Catat riwayat status
-        await supabase.from('pbpu_status_history').insert([
-          {
-            id: generateUUID(),
-            submission_id: submissionId,
-            old_status: 'DITOLAK',
-            new_status: 'MENUNGGU',
-            reason_or_note: noteMessage,
-            changed_by: user.username,
-            created_at: nowStr,
-          },
-        ]);
-      } catch (err) {
-        console.warn('Supabase resubmit update notice:', err);
+      // Catat riwayat status
+      const { error: histErr } = await supabase.from('pbpu_status_history').insert([
+        {
+          id: generateUUID(),
+          submission_id: submissionId,
+          old_status: 'DITOLAK',
+          new_status: 'MENUNGGU',
+          reason_or_note: noteMessage,
+          changed_by: user.username,
+          created_at: nowStr,
+        },
+      ]);
+      if (histErr) {
+        throw new Error(`Gagal catat riwayat status di database: ${histErr.message}`);
       }
 
       // 2. Update local state & storage
@@ -597,33 +605,37 @@ export const usePBPU = (user: User | null) => {
 
       const oldStatus = current.verification_status;
 
-      // Update Supabase
-      try {
-        await supabase
-          .from('pbpu_submissions')
-          .update({
-            verification_status: decision,
-            rejection_reason: decision === 'DITOLAK' ? reasonOrNote?.trim() : null,
-            verifier_username: user.username,
-            verifier_note: decision === 'TERVERIFIKASI' ? reasonOrNote?.trim() || null : null,
-            verified_at: nowStr,
-            updated_at: nowStr,
-          })
-          .eq('id', submissionId);
+      // Update Supabase (Wajib sukses sebelum update state/storage)
+      const { error: updErr } = await supabase
+        .from('pbpu_submissions')
+        .update({
+          verification_status: decision,
+          rejection_reason: decision === 'DITOLAK' ? reasonOrNote?.trim() : null,
+          verifier_username: user.username,
+          verifier_note: decision === 'TERVERIFIKASI' ? reasonOrNote?.trim() || null : null,
+          verified_at: nowStr,
+          updated_at: nowStr,
+        })
+        .eq('id', submissionId);
 
-        await supabase.from('pbpu_status_history').insert([
-          {
-            id: generateUUID(),
-            submission_id: submissionId,
-            old_status: oldStatus,
-            new_status: decision,
-            reason_or_note: reasonOrNote?.trim() || (decision === 'TERVERIFIKASI' ? 'Disetujui Dinkes' : 'Ditolak Dinkes'),
-            changed_by: user.username,
-            created_at: nowStr,
-          },
-        ]);
-      } catch (err) {
-        console.warn('Supabase verify fallback to local state:', err);
+      if (updErr) {
+        throw new Error(`Database error: ${updErr.message}`);
+      }
+
+      const { error: histErr } = await supabase.from('pbpu_status_history').insert([
+        {
+          id: generateUUID(),
+          submission_id: submissionId,
+          old_status: oldStatus,
+          new_status: decision,
+          reason_or_note: reasonOrNote?.trim() || (decision === 'TERVERIFIKASI' ? 'Disetujui Dinkes' : 'Ditolak Dinkes'),
+          changed_by: user.username,
+          created_at: nowStr,
+        },
+      ]);
+
+      if (histErr) {
+        throw new Error(`Riwayat status error: ${histErr.message}`);
       }
 
       // Update local state
@@ -710,30 +722,34 @@ export const usePBPU = (user: User | null) => {
 
       const oldStatus = current.nik_status;
 
-      // Update Supabase
-      try {
-        await supabase
-          .from('pbpu_submissions')
-          .update({
-            nik_status: newStatus,
-            nik_followup_note: followUpNote.trim(),
-            updated_at: nowStr,
-          })
-          .eq('id', submissionId);
+      // Update Supabase (Wajib sukses sebelum update local state)
+      const { error: updErr } = await supabase
+        .from('pbpu_submissions')
+        .update({
+          nik_status: newStatus,
+          nik_followup_note: followUpNote.trim(),
+          updated_at: nowStr,
+        })
+        .eq('id', submissionId);
 
-        await supabase.from('pbpu_nik_history').insert([
-          {
-            id: generateUUID(),
-            submission_id: submissionId,
-            old_status: oldStatus,
-            new_status: newStatus,
-            note: followUpNote.trim(),
-            updated_by: user.username,
-            created_at: nowStr,
-          },
-        ]);
-      } catch (err) {
-        console.warn('Supabase update NIK fallback to local state:', err);
+      if (updErr) {
+        throw new Error(`Database error: ${updErr.message}`);
+      }
+
+      const { error: histErr } = await supabase.from('pbpu_nik_history').insert([
+        {
+          id: generateUUID(),
+          submission_id: submissionId,
+          old_status: oldStatus,
+          new_status: newStatus,
+          note: followUpNote.trim(),
+          updated_by: user.username,
+          created_at: nowStr,
+        },
+      ]);
+
+      if (histErr) {
+        throw new Error(`Riwayat NIK error: ${histErr.message}`);
       }
 
       // Update local state
