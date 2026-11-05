@@ -104,7 +104,7 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
   // Unit Pengusul
   const [submitterUnit, setSubmitterUnit] = useState(() => {
     if (isDinsosUser) return 'Dinas Sosial Kabupaten Pamekasan';
-    if (isRsudUser) return PAMEKASAN_RSUD[0] || 'RSUD dr. H. Slamet Martodirdjo (SMART)';
+    if (isRsudUser) return PAMEKASAN_RSUD[0] || 'RSUD SMART';
     return PAMEKASAN_PUSKESMAS[0] || 'Puskesmas Proppo';
   });
 
@@ -125,7 +125,7 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
     PUSKESMAS_CONDITION_CATEGORIES[0]
   );
   const [healthFacility, setHealthFacility] = useState(
-    isRsudUser ? (PAMEKASAN_RSUD[0] || 'RSUD dr. H. Slamet Martodirdjo (SMART)') : ''
+    isRsudUser ? (PAMEKASAN_RSUD[0] || 'RSUD SMART') : ''
   );
   const [dpjpName, setDpjpName] = useState('');
 
@@ -516,11 +516,34 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
                   </SelectContent>
                 </Select>
               ) : channel === 'PUSKESMAS' ? (
-                <Select value={submitterUnit} onValueChange={setSubmitterUnit}>
-                  <SelectTrigger className="w-full bg-white">
-                    <SelectValue placeholder="Pilih Puskesmas" />
+                <Select
+                  value={submitterUnit}
+                  onValueChange={(val) => {
+                    setSubmitterUnit(val);
+                    if (val.toLowerCase().includes('rsud') || val.toLowerCase().includes('smart') || val.toLowerCase().includes('waru') || val.toLowerCase().includes('noer')) {
+                      setHealthFacility(val);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full bg-white font-medium">
+                    <SelectValue placeholder="Pilih Instansi Pengusul" />
                   </SelectTrigger>
                   <SelectContent>
+                    {!isPuskesmasUser && (
+                      <>
+                        <div className="px-2 py-1.5 text-[10px] font-bold text-purple-700 uppercase tracking-wider bg-purple-50">
+                          Rumah Sakit Umum Daerah (RSUD)
+                        </div>
+                        {PAMEKASAN_RSUD.map((rs) => (
+                          <SelectItem key={rs} value={rs}>
+                            {rs}
+                          </SelectItem>
+                        ))}
+                        <div className="px-2 py-1.5 text-[10px] font-bold text-teal-700 uppercase tracking-wider bg-teal-50 mt-1">
+                          Puskesmas Kabupaten Pamekasan
+                        </div>
+                      </>
+                    )}
                     {PAMEKASAN_PUSKESMAS.map((pkm) => (
                       <SelectItem key={pkm} value={pkm}>
                         {pkm}
@@ -732,7 +755,7 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
                   <Input
                     value={healthFacility}
                     onChange={(e) => setHealthFacility(e.target.value)}
-                    placeholder={isRsudUser ? "RSUD dr. H. Slamet Martodirdjo (SMART)" : "Puskesmas / RSUD SMART Pamekasan"}
+                    placeholder={isRsudUser ? "RSUD SMART" : "Puskesmas / RSUD SMART Pamekasan"}
                   />
                 </div>
 
@@ -1081,10 +1104,10 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
                   }`}
                 >
                   <p className="text-xs font-extrabold text-emerald-700 flex items-center gap-1.5">
-                    <CheckCircle2 size={14} /> Tidak Bermasalah
+                    <CheckCircle2 size={14} /> NIK Valid / Tidak Bermasalah
                   </p>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    NIK valid, aktif di SIAK Dukcapil dan tidak ada anomali.
+                    NIK aktif & sinkron SIAK. Usulan <strong>langsung diteruskan ke antrean Verifikasi Bidang Yankes Dinkes</strong>.
                   </p>
                 </button>
 
@@ -1098,13 +1121,22 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
                   }`}
                 >
                   <p className="text-xs font-extrabold text-rose-700 flex items-center gap-1.5">
-                    <AlertCircle size={14} /> Bermasalah (Perlu Dukcapil)
+                    <AlertCircle size={14} /> NIK Bermasalah (Ke Dukcapil Dahulu)
                   </p>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    NIK tidak aktif, ganda, atau belum terkonsolidasi pusat.
+                    NIK tidak aktif/anomali. Usulan <strong>masuk ke Dukcapil terlebih dahulu</strong>, belum masuk ke akun Yankes.
                   </p>
                 </button>
               </div>
+
+              {nikStatus === 'BERMASALAH' && (
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
+                  <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-[11px] leading-relaxed">
+                    <strong>Penting:</strong> Usulan ini akan masuk ke antrean <strong>Dinas Kependudukan dan Pencatatan Sipil (Dukcapil)</strong> terlebih dahulu untuk disinkronkan di SIAK. Berkas <em>tidak akan masuk ke akun Verifikator Yankes</em> sampai pihak Dukcapil menyelesaikan penanganan dan mengubah status NIK menjadi Valid.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5">

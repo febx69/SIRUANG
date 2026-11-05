@@ -121,7 +121,16 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
 
     const isSubRSUD =
       sub.submitter_unit.toLowerCase().includes('rsud') ||
+      sub.submitter_unit.toLowerCase().includes('smart') ||
+      sub.submitter_unit.toLowerCase().includes('waru') ||
+      sub.submitter_unit.toLowerCase().includes('noer') ||
       Boolean(sub.submitter_username && sub.submitter_username.toLowerCase().includes('rsud'));
+
+    // Di akun Verifikator Yankes (!isReadOnly), usulan yang NIK-nya BERMASALAH tidak masuk ke antrean verifikasi ini
+    // (masuk ke antrean Dukcapil terlebih dahulu, baru masuk ke akun Yankes setelah Dukcapil mengubah status jadi TIDAK_BERMASALAH)
+    if (!isReadOnly && sub.nik_status === 'BERMASALAH') {
+      return false;
+    }
 
     const matchStatus = statusFilter === 'ALL' || sub.verification_status === statusFilter;
     const matchChannel =
@@ -353,6 +362,9 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
 
                       <td className="py-3.5 px-4">
                         {sub.submitter_unit.toLowerCase().includes('rsud') ||
+                        sub.submitter_unit.toLowerCase().includes('smart') ||
+                        sub.submitter_unit.toLowerCase().includes('waru') ||
+                        sub.submitter_unit.toLowerCase().includes('noer') ||
                         (sub.submitter_username && sub.submitter_username.toLowerCase().includes('rsud')) ? (
                           <Badge
                             variant="outline"
@@ -380,11 +392,22 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
                       <td className="py-3.5 px-4">{getNikBadge(sub.nik_status)}</td>
 
                       <td className="py-3.5 px-4">
-                        {getStatusBadge(sub.verification_status)}
-                        {sub.verification_status === 'DITOLAK' && sub.rejection_reason && (
-                          <p className="text-[10px] text-rose-600 line-clamp-1 mt-0.5 italic">
-                            "{sub.rejection_reason}"
-                          </p>
+                        {isReadOnly && sub.nik_status === 'BERMASALAH' ? (
+                          <div className="space-y-0.5">
+                            <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100 border-rose-200 gap-1 font-semibold text-[10px]">
+                              <Clock size={11} /> Menunggu Dukcapil
+                            </Badge>
+                            <p className="text-[10px] text-rose-600 font-medium">Belum masuk ke Yankes</p>
+                          </div>
+                        ) : (
+                          <>
+                            {getStatusBadge(sub.verification_status)}
+                            {sub.verification_status === 'DITOLAK' && sub.rejection_reason && (
+                              <p className="text-[10px] text-rose-600 line-clamp-1 mt-0.5 italic">
+                                "{sub.rejection_reason}"
+                              </p>
+                            )}
+                          </>
                         )}
                       </td>
 
@@ -455,6 +478,27 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
               </DialogHeader>
 
               <div className="flex-1 overflow-y-auto py-4 space-y-6 pr-1">
+                {/* BANNER NOTIFIKASI JIKA STATUS NIK BERMASALAH (TAHAP DUKCAPIL) */}
+                {selectedSubmission.nik_status === 'BERMASALAH' && (
+                  <div className="p-4 rounded-2xl border-2 border-rose-200 bg-rose-50 text-rose-950 space-y-2">
+                    <div className="flex items-start gap-2.5">
+                      <AlertCircle size={22} className="text-rose-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-black text-rose-950 text-sm uppercase tracking-wide">
+                          Menunggu Penanganan NIK oleh Dukcapil
+                        </p>
+                        <p className="text-xs text-rose-800 mt-1 leading-relaxed">
+                          Usulan ini <strong>belum masuk ke akun verifikasi Bidang Pelayanan Kesehatan (Yankes) Dinkes</strong> karena NIK calon peserta dilaporkan bermasalah. Berkas saat ini sedang dalam antrean Dinas Kependudukan dan Pencatatan Sipil (Dukcapil) untuk penyesuaian di SIAK. Berkas akan otomatis masuk ke tahap verifikasi Dinkes setelah Dukcapil menyelesaikan pemutakhiran NIK menjadi Valid.
+                        </p>
+                        {selectedSubmission.nik_followup_note && (
+                          <div className="mt-2 p-2.5 bg-white/80 rounded-lg border border-rose-200 text-xs text-rose-900">
+                            <strong>Catatan Dukcapil:</strong> {selectedSubmission.nik_followup_note}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {/* BANNER NOTIFIKASI JIKA STATUS DITOLAK */}
                 {selectedSubmission.verification_status === 'DITOLAK' && (
                   <div className="p-4 rounded-2xl border-2 border-rose-300 bg-rose-50/90 text-rose-950 space-y-3">
@@ -586,6 +630,9 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
                       <span className="text-slate-500">Jalur / Unit:</span>
                       <span className="col-span-2 text-slate-800 font-semibold">
                         {selectedSubmission.submitter_unit.toLowerCase().includes('rsud') ||
+                        selectedSubmission.submitter_unit.toLowerCase().includes('smart') ||
+                        selectedSubmission.submitter_unit.toLowerCase().includes('waru') ||
+                        selectedSubmission.submitter_unit.toLowerCase().includes('noer') ||
                         (selectedSubmission.submitter_username &&
                           selectedSubmission.submitter_username.toLowerCase().includes('rsud'))
                           ? 'RSUD'

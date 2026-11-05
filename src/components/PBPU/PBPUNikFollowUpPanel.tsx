@@ -102,10 +102,10 @@ export const PBPUNikFollowUpPanel: React.FC<PBPUNikFollowUpPanelProps> = ({
         </div>
         <div>
           <h3 className="font-bold text-slate-900 text-sm">
-            Antrean Tindak Lanjut NIK Bermasalah (Dukcapil / Verifikator)
+            Portal Penanganan & Sinkronisasi NIK SIAK (Dukcapil)
           </h3>
           <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
-            Sesuai PRD Bagian 6.3 & FR-008, usulan dengan NIK yang bermasalah (tidak aktif, ganda, atau anomali SIAK) memerlukan konfirmasi & pembaruan catatan oleh petugas sebelum kepesertaan diproses lebih lanjut.
+            Usulan calon peserta PBPU BP dengan status NIK Bermasalah masuk ke sini terlebih dahulu untuk diverifikasi dan disinkronkan di SIAK Dukcapil. Setelah status diubah menjadi <strong>Tidak Bermasalah (Valid)</strong>, berkas usulan akan <strong>otomatis diteruskan ke antrean Verifikasi Bidang Yankes Dinkes</strong>.
           </p>
         </div>
       </div>
@@ -275,10 +275,13 @@ export const PBPUNikFollowUpPanel: React.FC<PBPUNikFollowUpPanelProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="TIDAK_BERMASALAH">Tidak Bermasalah (Valid / SIAK Sesuai)</SelectItem>
-                    <SelectItem value="BERMASALAH">Masih Bermasalah (Perlu Penanganan)</SelectItem>
+                    <SelectItem value="TIDAK_BERMASALAH">Tidak Bermasalah / Valid (Teruskan ke Yankes)</SelectItem>
+                    <SelectItem value="BERMASALAH">Masih Bermasalah (Tetap di Antrean Dukcapil)</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-[11px] text-teal-700 font-medium mt-1">
+                  💡 Memilih "Tidak Bermasalah / Valid" akan langsung meneruskan berkas usulan ke antrean akun Verifikator Yankes Dinkes.
+                </p>
               </div>
 
               <div className="space-y-1.5">

@@ -116,6 +116,9 @@ export const PBPURecapExport: React.FC<PBPURecapExportProps> = ({ submissions })
 
       const isSubRSUD =
         sub.submitter_unit.toLowerCase().includes('rsud') ||
+        sub.submitter_unit.toLowerCase().includes('smart') ||
+        sub.submitter_unit.toLowerCase().includes('waru') ||
+        sub.submitter_unit.toLowerCase().includes('noer') ||
         Boolean(sub.submitter_username && sub.submitter_username.toLowerCase().includes('rsud'));
 
       if (channelFilter === 'RSUD' && !isSubRSUD) return false;
@@ -159,6 +162,9 @@ export const PBPURecapExport: React.FC<PBPURecapExportProps> = ({ submissions })
     'No. Telepon': sub.phone || '-',
     'Jalur Pengusulan':
       sub.submitter_unit.toLowerCase().includes('rsud') ||
+      sub.submitter_unit.toLowerCase().includes('smart') ||
+      sub.submitter_unit.toLowerCase().includes('waru') ||
+      sub.submitter_unit.toLowerCase().includes('noer') ||
       Boolean(sub.submitter_username && sub.submitter_username.toLowerCase().includes('rsud'))
         ? 'RSUD'
         : sub.submission_channel,
@@ -713,6 +719,9 @@ export const PBPURecapExport: React.FC<PBPURecapExportProps> = ({ submissions })
 
                     <td className="py-3 px-4">
                       {sub.submitter_unit.toLowerCase().includes('rsud') ||
+                      sub.submitter_unit.toLowerCase().includes('smart') ||
+                      sub.submitter_unit.toLowerCase().includes('waru') ||
+                      sub.submitter_unit.toLowerCase().includes('noer') ||
                       (sub.submitter_username && sub.submitter_username.toLowerCase().includes('rsud')) ? (
                         <Badge
                           variant="outline"

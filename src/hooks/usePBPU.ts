@@ -348,7 +348,10 @@ export const usePBPU = (user: User | null) => {
 
       toast({
         title: 'Usulan Berhasil Dikirim',
-        description: `Nomor Registrasi: ${regNo}. Dokumen (${newDocs.length}) berhasil diunggah. Status: Menunggu Verifikasi Dinkes.`,
+        description:
+          payload.nik_status === 'BERMASALAH'
+            ? `Nomor Registrasi: ${regNo}. Karena NIK bermasalah, usulan masuk ke antrean Dukcapil terlebih dahulu sebelum masuk ke verifikasi Dinkes.`
+            : `Nomor Registrasi: ${regNo}. Dokumen (${newDocs.length}) berhasil diunggah. Status: Menunggu Verifikasi Dinkes.`,
       });
 
       return { success: true, regNo };
@@ -752,7 +755,10 @@ export const usePBPU = (user: User | null) => {
 
       toast({
         title: 'Status NIK Berhasil Diperbarui',
-        description: `Status NIK kini: ${newStatus === 'TIDAK_BERMASALAH' ? 'Tidak Bermasalah (Valid)' : 'Bermasalah'}.`,
+        description:
+          newStatus === 'TIDAK_BERMASALAH'
+            ? `Status NIK kini: Valid/Tidak Bermasalah. Usulan otomatis masuk ke antrean Verifikasi Bidang Yankes Dinkes.`
+            : `Status NIK tetap: Bermasalah (Masih dalam penanganan Dukcapil).`,
       });
 
       return true;
@@ -769,7 +775,10 @@ export const usePBPU = (user: User | null) => {
   // KPI & Statistik Agregat untuk Dashboard (Bagian 11 PRD)
   const stats = useMemo(() => {
     const total = submissions.length;
-    const menunggu = submissions.filter((s) => s.verification_status === 'MENUNGGU').length;
+    // Menunggu Verifikasi Yankes HANYA yang NIK-nya sudah TIDAK_BERMASALAH
+    const menunggu = submissions.filter(
+      (s) => s.verification_status === 'MENUNGGU' && s.nik_status === 'TIDAK_BERMASALAH'
+    ).length;
     const terverifikasi = submissions.filter((s) => s.verification_status === 'TERVERIFIKASI').length;
     const ditolak = submissions.filter((s) => s.verification_status === 'DITOLAK').length;
     const nikBermasalah = submissions.filter((s) => s.nik_status === 'BERMASALAH').length;
@@ -777,12 +786,18 @@ export const usePBPU = (user: User | null) => {
     const jalurRSUD = submissions.filter(
       (s) =>
         s.submitter_unit.toLowerCase().includes('rsud') ||
+        s.submitter_unit.toLowerCase().includes('smart') ||
+        s.submitter_unit.toLowerCase().includes('waru') ||
+        s.submitter_unit.toLowerCase().includes('noer') ||
         Boolean(s.submitter_username && s.submitter_username.toLowerCase().includes('rsud'))
     ).length;
     const jalurPuskesmas = submissions.filter(
       (s) =>
         s.submission_channel === 'PUSKESMAS' &&
         !s.submitter_unit.toLowerCase().includes('rsud') &&
+        !s.submitter_unit.toLowerCase().includes('smart') &&
+        !s.submitter_unit.toLowerCase().includes('waru') &&
+        !s.submitter_unit.toLowerCase().includes('noer') &&
         !(s.submitter_username && s.submitter_username.toLowerCase().includes('rsud'))
     ).length;
     const jalurDinsos = submissions.filter((s) => s.submission_channel === 'DINSOS').length;

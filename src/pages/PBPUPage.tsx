@@ -83,16 +83,29 @@ export const PBPUPage: React.FC = () => {
       return submissions.filter(
         (s) =>
           s.submitter_unit.toLowerCase().includes('rsud') ||
+          s.submitter_unit.toLowerCase().includes('smart') ||
+          s.submitter_unit.toLowerCase().includes('waru') ||
+          s.submitter_unit.toLowerCase().includes('noer') ||
           (s.submitter_username && s.submitter_username.toLowerCase().includes('rsud'))
       );
     }
-    // Akun tunggal Puskesmas: menampilkan usulan jalur Puskesmas
+    // Akun tunggal Puskesmas: menampilkan usulan jalur Puskesmas (bukan RSUD)
     return submissions.filter(
       (s) =>
-        (s.submission_channel === 'PUSKESMAS' && !s.submitter_unit.toLowerCase().includes('rsud')) ||
+        (s.submission_channel === 'PUSKESMAS' &&
+          !s.submitter_unit.toLowerCase().includes('rsud') &&
+          !s.submitter_unit.toLowerCase().includes('smart') &&
+          !s.submitter_unit.toLowerCase().includes('waru') &&
+          !s.submitter_unit.toLowerCase().includes('noer')) ||
         (s.submitter_username && s.submitter_username.toLowerCase().includes('puskesmas'))
     );
   }, [submissions, isPengusul, isDinsos, isRSUD]);
+
+  // Usulan yang masuk ke antrean Verifikasi Yankes:
+  // HANYA usulan yang status NIK-nya TIDAK_BERMASALAH (sudah divalidasi Dukcapil atau tidak bermasalah sejak awal)
+  const yankesVerificationSubmissions = React.useMemo(() => {
+    return submissions.filter((s) => s.nik_status === 'TIDAK_BERMASALAH');
+  }, [submissions]);
 
   const unitNikBermasalahCount = React.useMemo(() => {
     return unitSubmissions.filter((s) => s.nik_status === 'BERMASALAH').length;
@@ -483,7 +496,7 @@ export const PBPUPage: React.FC = () => {
           {isVerifier && (
             <TabsContent value="verifikasi" className="mt-0 focus-visible:outline-none">
               <PBPUVerificationPanel
-                submissions={submissions}
+                submissions={yankesVerificationSubmissions}
                 user={user}
                 onVerify={verifySubmission}
                 isLoading={dataLoading}
