@@ -83,8 +83,24 @@ function doPost(e) {
   }
 }
 
-// Endpoint GET untuk pengetesan koneksi (Health Check)
+// Endpoint GET untuk pengetesan koneksi & download berkas
 function doGet(e) {
+  if (e && e.parameter && (e.parameter.action === 'getFile' || e.parameter.fileId)) {
+    var fileId = e.parameter.fileId;
+    try {
+      var file = DriveApp.getFileById(fileId);
+      var blob = file.getBlob();
+      return responseJSON({
+        status: 'success',
+        filename: file.getName(),
+        mimetype: blob.getContentType(),
+        base64: Utilities.base64Encode(blob.getBytes())
+      });
+    } catch (err) {
+      return responseJSON({ status: 'error', message: err.toString() });
+    }
+  }
+
   return responseJSON({
     status: 'ok',
     service: 'SIRUANG Google Drive Upload Gateway',

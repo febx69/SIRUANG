@@ -525,7 +525,7 @@ export const PBPUPage: React.FC = () => {
               submissions={isPengusul ? unitSubmissions : submissions}
               user={user}
               onUpdateNik={updateNikStatus}
-              canUpdateNik={isDukcapil || isVerifier}
+              canUpdateNik={isDukcapil}
             />
           </TabsContent>
 

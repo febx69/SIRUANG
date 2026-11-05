@@ -682,6 +682,18 @@ export const usePBPU = (user: User | null) => {
   ): Promise<boolean> => {
     if (!user) return false;
 
+    // VALIDASI KEWENANGAN: Hanya Dukcapil yang berhak mengubah status NIK
+    const uname = (user.username || '').toLowerCase();
+    const isDukcapil = user.role === 'dukcapil' || uname === 'dukcapil';
+    if (!isDukcapil) {
+      toast({
+        title: 'Akses Ditolak',
+        description: 'Hanya akun Dukcapil yang berwenang mengubah status NIK calon peserta.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
     if (!followUpNote || !followUpNote.trim()) {
       toast({
         title: 'Catatan Wajib Diisi',

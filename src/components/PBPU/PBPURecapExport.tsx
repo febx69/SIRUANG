@@ -229,64 +229,80 @@ export const PBPURecapExport: React.FC<PBPURecapExportProps> = ({ submissions })
     return new Uint8Array(out);
   };
 
-  // Helper: Mengambil konten berkas dokumen (ArrayBuffer / Base64 / Text Fallback)
+  // Helper: Mengambil konten berkas dokumen asli (ArrayBuffer / Base64)
   const fetchDocumentContent = async (
     doc: PBPUDocument
-  ): Promise<{ data: Uint8Array | ArrayBuffer | string; fileName: string } | null> => {
+  ): Promise<{ data: Uint8Array | ArrayBuffer; fileName: string } | null> => {
     const rawFileName = doc.file_name || `Dokumen_${doc.document_type}.pdf`;
     const cleanFileName = rawFileName.replace(/[\\/:*?"<>|]/g, '_');
-    const finalFileName = `${doc.document_type}_${cleanFileName}`;
+    const finalFileName = cleanFileName.startsWith(doc.document_type)
+      ? cleanFileName
+      : `${doc.document_type}_${cleanFileName}`;
     const url = doc.file_url;
 
     if (!url) return null;
 
     // 1. Jika Base64 Data URL
     if (url.startsWith('data:')) {
-      const base64Index = url.indexOf(';base64,');
-      if (base64Index !== -1) {
-        const base64Data = url.slice(base64Index + 8);
-        const binaryString = atob(base64Data);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
+      try {
+        const base64Index = url.indexOf(';base64,');
+        if (base64Index !== -1) {
+          const base64Data = url.slice(base64Index + 8);
+          const binaryString = atob(base64Data);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          return { data: bytes, fileName: finalFileName };
         }
-        return { data: bytes, fileName: finalFileName };
+      } catch (err) {
+        console.error('Error decoding base64:', err);
       }
     }
 
     // 2. Jika Google Drive URL
     if (isGoogleDriveUrl(url)) {
-      const downloadUrl = getGoogleDriveDownloadUrl(url);
-      try {
-        const res = await fetch(downloadUrl);
-        if (res.ok) {
-          const buf = await res.arrayBuffer();
-          return { data: buf, fileName: finalFileName };
+      const fileId = extractGoogleDriveFileId(url);
+      if (fileId) {
+        // Endpoint unduh langsung Google Drive resmi yang mendukung CORS tanpa redirect:
+        const candidateUrls = [
+          `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`,
+          `https://drive.usercontent.google.com/download?id=${fileId}&export=download`,
+          `https://lh3.googleusercontent.com/d/${fileId}`,
+        ];
+
+        for (const dlUrl of candidateUrls) {
+          try {
+            const res = await fetch(dlUrl);
+            if (res.ok) {
+              const buf = await res.arrayBuffer();
+              if (buf && buf.byteLength > 0) {
+                return { data: buf, fileName: finalFileName };
+              }
+            }
+          } catch (err) {
+            console.warn(`Gagal fetch dari ${dlUrl}:`, err);
+          }
         }
-      } catch (err) {
-        console.warn(`Gagal fetch langsung Google Drive (${finalFileName}):`, err);
       }
     }
 
-    // 3. Jika URL http biasa
+    // 3. Jika URL http biasa / Supabase storage
     if (url.startsWith('http')) {
       try {
         const res = await fetch(url);
         if (res.ok) {
           const buf = await res.arrayBuffer();
-          return { data: buf, fileName: finalFileName };
+          if (buf && buf.byteLength > 0) {
+            return { data: buf, fileName: finalFileName };
+          }
         }
       } catch (err) {
         console.warn(`Gagal fetch direct URL (${finalFileName}):`, err);
       }
     }
 
-    // Fallback: Jika berkas terhalang jaringan/CORS, buat file rujukan teks agar zip tetap utuh
-    const infoText = `DOKUMEN PERSYARATAN PBPU BP\n--------------------------------\nJenis Dokumen : ${doc.document_type}\nNama Berkas   : ${doc.file_name}\nTautan Cloud  : ${url}\nDiunggah Oleh : ${doc.uploaded_by || '-'}\nWaktu Unggah  : ${doc.created_at || '-'}\n\n* File fisik dapat diakses langsung melalui tautan cloud Google Drive di atas.`;
-    return {
-      data: infoText,
-      fileName: `${doc.document_type}_Tautan_GoogleDrive.txt`,
-    };
+    return null;
   };
 
   // 1. EKSPOR EXCEL BIASA (.xlsx)

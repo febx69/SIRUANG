@@ -77,7 +77,7 @@ export function getGoogleDriveDirectImageUrl(urlOrId: string): string {
 export function getGoogleDriveDownloadUrl(urlOrId: string): string {
   const fileId = extractGoogleDriveFileId(urlOrId);
   if (fileId) {
-    return `https://drive.google.com/uc?export=download&id=${fileId}`;
+    return `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`;
   }
   return urlOrId;
 }
@@ -150,7 +150,7 @@ export async function uploadFileToGoogleDrive(
         fileId: result.fileId,
         previewUrl: `https://drive.google.com/file/d/${result.fileId}/preview`,
         directUrl: `https://lh3.googleusercontent.com/d/${result.fileId}`,
-        downloadUrl: `https://drive.google.com/uc?export=download&id=${result.fileId}`,
+        downloadUrl: `https://drive.usercontent.google.com/download?id=${result.fileId}&export=download&confirm=t`,
         fileName: filename,
       };
     }

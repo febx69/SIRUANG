@@ -51,9 +51,8 @@ export const PBPUNikFollowUpPanel: React.FC<PBPUNikFollowUpPanelProps> = ({
 }) => {
   const uname = (user?.username || '').toLowerCase();
   const isDukcapil = user?.role === 'dukcapil' || uname === 'dukcapil';
-  const isYankesOrAdmin = uname === 'yankes' || user?.role === 'admin';
-  // Hanya Dukcapil (atau Yankes/Admin jika perlu) yang dapat memperbarui status NIK
-  const allowUpdate = canUpdateNik !== undefined ? canUpdateNik : (isDukcapil || isYankesOrAdmin);
+  // HANYA DUKCAPIL YANG BISA MENGUBAH STATUS NIK! (Yankes dan peran lain HANYA bisa memantau)
+  const allowUpdate = Boolean(isDukcapil && (canUpdateNik !== undefined ? canUpdateNik : true));
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'BERMASALAH' | 'ALL'>('BERMASALAH');
@@ -222,13 +221,13 @@ export const PBPUNikFollowUpPanel: React.FC<PBPUNikFollowUpPanelProps> = ({
                     <Button
                       size="sm"
                       onClick={() => handleOpenFollowUp(sub)}
-                      className="text-xs font-bold gap-1 bg-slate-900 hover:bg-slate-800 text-white"
+                      className="text-xs font-bold gap-1 bg-slate-900 hover:bg-slate-800 text-white cursor-pointer"
                     >
                       <FileCheck size={14} /> Tindak Lanjut NIK
                     </Button>
                   ) : (
-                    <Badge variant="outline" className="text-[10px] text-slate-500">
-                      Wewenang Dukcapil
+                    <Badge variant="outline" className="text-[10px] text-slate-500 font-semibold bg-slate-100 border-slate-300">
+                      Hanya Wewenang Dukcapil
                     </Badge>
                   )}
                 </div>
