@@ -46,9 +46,10 @@ export const PBPUPage: React.FC = () => {
   const isYankes = uname === 'yankes' || uname.includes('yankes');
   const isAdmin = user?.role === 'admin';
   const isPuskesmas = user?.role === 'puskesmas' || uname.startsWith('puskesmas') || uname.startsWith('pkm_');
+  const isRSUD = user?.role === 'rsud' || uname === 'rsud' || uname.startsWith('rsud');
   const isDinsos = user?.role === 'dinsos' || uname === 'dinsos';
   const isDukcapil = user?.role === 'dukcapil' || uname === 'dukcapil';
-  const isPengusul = isPuskesmas || isDinsos;
+  const isPengusul = isPuskesmas || isDinsos || isRSUD;
   const isVerifier = isYankes || isAdmin;
 
   // State untuk menangani usulan yang ditolak dan sedang diperbaiki oleh pengusul
@@ -70,7 +71,7 @@ export const PBPUPage: React.FC = () => {
     setSearchParams({ tab: val });
   };
 
-  // Filter usulan unit untuk Pengusul (Puskesmas & Dinsos)
+  // Filter usulan unit untuk Pengusul (Puskesmas, Dinsos, & RSUD)
   const unitSubmissions = React.useMemo(() => {
     if (!isPengusul) return submissions;
     if (isDinsos) {
@@ -78,13 +79,20 @@ export const PBPUPage: React.FC = () => {
         (s) => s.submission_channel === 'DINSOS' || s.submitter_unit.toLowerCase().includes('sosial')
       );
     }
-    // Akun tunggal Puskesmas: menampilkan seluruh usulan jalur Puskesmas
+    if (isRSUD) {
+      return submissions.filter(
+        (s) =>
+          s.submitter_unit.toLowerCase().includes('rsud') ||
+          (s.submitter_username && s.submitter_username.toLowerCase().includes('rsud'))
+      );
+    }
+    // Akun tunggal Puskesmas: menampilkan usulan jalur Puskesmas
     return submissions.filter(
       (s) =>
-        s.submission_channel === 'PUSKESMAS' ||
+        (s.submission_channel === 'PUSKESMAS' && !s.submitter_unit.toLowerCase().includes('rsud')) ||
         (s.submitter_username && s.submitter_username.toLowerCase().includes('puskesmas'))
     );
-  }, [submissions, isPengusul, isDinsos]);
+  }, [submissions, isPengusul, isDinsos, isRSUD]);
 
   const unitNikBermasalahCount = React.useMemo(() => {
     return unitSubmissions.filter((s) => s.nik_status === 'BERMASALAH').length;
@@ -130,6 +138,8 @@ export const PBPUPage: React.FC = () => {
                 ? 'Bidang Yankes (Verifikator)'
                 : isDinsos
                 ? 'Dinas Sosial (Pengusul)'
+                : isRSUD
+                ? 'RSUD (Pengusul)'
                 : isPuskesmas
                 ? 'Puskesmas (Pengusul)'
                 : isDukcapil
@@ -151,6 +161,8 @@ export const PBPUPage: React.FC = () => {
                   ? 'Bidang Pelayanan Kesehatan'
                   : isDinsos
                   ? 'Dinas Sosial Kab. Pamekasan'
+                  : isRSUD
+                  ? 'Rumah Sakit Umum Daerah'
                   : isPuskesmas
                   ? 'Fasilitas Pelayanan Kesehatan'
                   : isDukcapil
@@ -162,6 +174,8 @@ export const PBPUPage: React.FC = () => {
                   ? 'Penanganan & Konsolidasi NIK SIAK'
                   : isDinsos
                   ? 'Jalur Desil 1–5 PBPU BP'
+                  : isRSUD
+                  ? 'Jalur Pasien RSUD & Kondisi Khusus'
                   : isPuskesmas
                   ? 'Jalur Kondisi Khusus & SKTM'
                   : 'Dinas Kesehatan Kab. Pamekasan'}
@@ -175,6 +189,8 @@ export const PBPUPage: React.FC = () => {
                 ? 'Pemeriksaan & Tindak Lanjut NIK PBPU BP'
                 : isDinsos
                 ? 'Pendaftaran PBPU BP — Jalur Dinas Sosial'
+                : isRSUD
+                ? 'Pendaftaran PBPU BP — Jalur RSUD'
                 : isPuskesmas
                 ? 'Pendaftaran PBPU BP — Jalur Puskesmas'
                 : 'Pendaftaran & Verifikasi PBPU BP'}
@@ -187,9 +203,11 @@ export const PBPUPage: React.FC = () => {
                 ? 'Portal pemeriksaan dan pemutakhiran status NIK calon peserta PBPU BP yang dilaporkan bermasalah di database kependudukan. Ubah status menjadi Selesai/Valid setelah perbaikan di SIAK.'
                 : isDinsos
                 ? 'Pengajuan usulan calon peserta PBPU BP Pemerintah Daerah bagi warga miskin dan rentan pada kelompok Desil 1 sampai 5. Lampirkan dokumen bukti penetapan desil resmi.'
+                : isRSUD
+                ? 'Pengajuan usulan calon peserta PBPU BP Pemerintah Daerah untuk pasien rawat inap/jalan RSUD berpenyakit kronis/kondisi tertentu (surat DPJP) atau SKTM.'
                 : isPuskesmas
                 ? 'Pengajuan usulan calon peserta PBPU BP Pemerintah Daerah untuk pasien berpenyakit kronis/kondisi tertentu (surat DPJP) atau SKTM Kepala Desa/Kelurahan.'
-                : 'Sistem pendaftaran dan verifikasi terpadu PBPU BP Pemkab Pamekasan terintegrasi antara Puskesmas, Dinas Sosial, Dinas Kesehatan, dan Dukcapil.'}
+                : 'Sistem pendaftaran dan verifikasi terpadu PBPU BP Pemkab Pamekasan terintegrasi antara RSUD, Puskesmas, Dinas Sosial, Dinas Kesehatan, dan Dukcapil.'}
             </p>
           </div>
 
@@ -201,6 +219,8 @@ export const PBPUPage: React.FC = () => {
                   ? 'Verifikator Yankes'
                   : isDinsos
                   ? 'Pengusul Dinsos'
+                  : isRSUD
+                  ? 'Pengusul RSUD'
                   : isPuskesmas
                   ? 'Pengusul Puskesmas'
                   : isDukcapil
@@ -282,7 +302,7 @@ export const PBPUPage: React.FC = () => {
                 <BarChart3 size={16} className="text-teal-600" />
               </div>
               <p className="text-lg font-black text-teal-950 tracking-tight mt-1.5">
-                {stats.jalurPuskesmas} <span className="text-xs font-semibold text-slate-500">PKM</span> / {stats.jalurDinsos} <span className="text-xs font-semibold text-slate-500">DS</span>
+                {stats.jalurPuskesmas} <span className="text-xs font-semibold text-slate-500">PKM</span> / {stats.jalurRSUD || 0} <span className="text-xs font-semibold text-purple-600">RS</span> / {stats.jalurDinsos} <span className="text-xs font-semibold text-slate-500">DS</span>
               </p>
               <p className="text-[10px] text-teal-700">Grafik & distribusi wilayah</p>
             </button>

@@ -774,7 +774,17 @@ export const usePBPU = (user: User | null) => {
     const ditolak = submissions.filter((s) => s.verification_status === 'DITOLAK').length;
     const nikBermasalah = submissions.filter((s) => s.nik_status === 'BERMASALAH').length;
     const nikClear = submissions.filter((s) => s.nik_status === 'TIDAK_BERMASALAH').length;
-    const jalurPuskesmas = submissions.filter((s) => s.submission_channel === 'PUSKESMAS').length;
+    const jalurRSUD = submissions.filter(
+      (s) =>
+        s.submitter_unit.toLowerCase().includes('rsud') ||
+        Boolean(s.submitter_username && s.submitter_username.toLowerCase().includes('rsud'))
+    ).length;
+    const jalurPuskesmas = submissions.filter(
+      (s) =>
+        s.submission_channel === 'PUSKESMAS' &&
+        !s.submitter_unit.toLowerCase().includes('rsud') &&
+        !(s.submitter_username && s.submitter_username.toLowerCase().includes('rsud'))
+    ).length;
     const jalurDinsos = submissions.filter((s) => s.submission_channel === 'DINSOS').length;
 
     // Breakdown per Kecamatan
@@ -797,6 +807,7 @@ export const usePBPU = (user: User | null) => {
       nikBermasalah,
       nikClear,
       jalurPuskesmas,
+      jalurRSUD,
       jalurDinsos,
       byDistrict,
       byUnit,

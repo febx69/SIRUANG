@@ -73,7 +73,7 @@ export const PBPURecapExport: React.FC<PBPURecapExportProps> = ({ submissions })
   const currentYear = new Date().getFullYear().toString();
   const [selectedYear, setSelectedYear] = useState<string>(currentYear);
   const [selectedMonth, setSelectedMonth] = useState<string>('ALL'); // 'ALL' atau '0'-'11'
-  const [channelFilter, setChannelFilter] = useState<'ALL' | PBPUSubmissionChannel>('ALL');
+  const [channelFilter, setChannelFilter] = useState<'ALL' | PBPUSubmissionChannel | 'RSUD'>('ALL');
   const [districtFilter, setDistrictFilter] = useState<'ALL' | string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -114,7 +114,13 @@ export const PBPURecapExport: React.FC<PBPURecapExportProps> = ({ submissions })
       if (selectedYear !== 'ALL' && subYear !== selectedYear) return false;
       if (selectedMonth !== 'ALL' && subMonth !== selectedMonth) return false;
 
-      if (channelFilter !== 'ALL' && sub.submission_channel !== channelFilter) return false;
+      const isSubRSUD =
+        sub.submitter_unit.toLowerCase().includes('rsud') ||
+        Boolean(sub.submitter_username && sub.submitter_username.toLowerCase().includes('rsud'));
+
+      if (channelFilter === 'RSUD' && !isSubRSUD) return false;
+      if (channelFilter === 'PUSKESMAS' && (sub.submission_channel !== 'PUSKESMAS' || isSubRSUD)) return false;
+      if (channelFilter === 'DINSOS' && sub.submission_channel !== 'DINSOS') return false;
       if (districtFilter !== 'ALL' && sub.district !== districtFilter) return false;
 
       if (searchTerm.trim()) {
@@ -151,7 +157,11 @@ export const PBPURecapExport: React.FC<PBPURecapExportProps> = ({ submissions })
     'Desa/Kelurahan': sub.village,
     Kecamatan: sub.district,
     'No. Telepon': sub.phone || '-',
-    'Jalur Pengusulan': sub.submission_channel,
+    'Jalur Pengusulan':
+      sub.submitter_unit.toLowerCase().includes('rsud') ||
+      Boolean(sub.submitter_username && sub.submitter_username.toLowerCase().includes('rsud'))
+        ? 'RSUD'
+        : sub.submission_channel,
     'Unit Pengusul': sub.submitter_unit,
     'Kategori Kondisi / Desil':
       sub.submission_channel === 'PUSKESMAS'
@@ -596,6 +606,7 @@ export const PBPURecapExport: React.FC<PBPURecapExportProps> = ({ submissions })
               <SelectContent>
                 <SelectItem value="ALL">Semua Jalur</SelectItem>
                 <SelectItem value="PUSKESMAS">Jalur Puskesmas</SelectItem>
+                <SelectItem value="RSUD">Jalur RSUD</SelectItem>
                 <SelectItem value="DINSOS">Jalur Dinas Sosial</SelectItem>
               </SelectContent>
             </Select>
@@ -701,16 +712,26 @@ export const PBPURecapExport: React.FC<PBPURecapExportProps> = ({ submissions })
                     </td>
 
                     <td className="py-3 px-4">
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] font-bold ${
-                          sub.submission_channel === 'PUSKESMAS'
-                            ? 'border-teal-300 text-teal-800 bg-teal-50'
-                            : 'border-blue-300 text-blue-800 bg-blue-50'
-                        }`}
-                      >
-                        {sub.submission_channel}
-                      </Badge>
+                      {sub.submitter_unit.toLowerCase().includes('rsud') ||
+                      (sub.submitter_username && sub.submitter_username.toLowerCase().includes('rsud')) ? (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] font-bold border-purple-300 text-purple-800 bg-purple-50"
+                        >
+                          RSUD
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] font-bold ${
+                            sub.submission_channel === 'PUSKESMAS'
+                              ? 'border-teal-300 text-teal-800 bg-teal-50'
+                              : 'border-blue-300 text-blue-800 bg-blue-50'
+                          }`}
+                        >
+                          {sub.submission_channel}
+                        </Badge>
+                      )}
                       <p className="text-[10px] text-slate-500 mt-0.5">{sub.submitter_unit}</p>
                     </td>
 

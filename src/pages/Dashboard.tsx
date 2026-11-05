@@ -20,13 +20,14 @@ const Dashboard = () => {
 
   const uname = (user.username || "").toLowerCase();
   const isPuskesmas = user.role === "puskesmas" || uname.startsWith("puskesmas") || uname.startsWith("pkm_");
+  const isRSUD = user.role === "rsud" || uname === "rsud" || uname.startsWith("rsud");
   const isDinsos = user.role === "dinsos" || uname === "dinsos";
   const isDukcapil = user.role === "dukcapil" || uname === "dukcapil";
   const isPengurusBarang = user.role === "pengurus_barang" || uname.startsWith("pengurus");
   const isOB = isUserOB(user);
   const isAdmin = user.role === "admin";
   const isYankes = uname === "yankes" || uname.includes("yankes");
-  const isSingleMenu = isPengurusBarang || isDinsos || isDukcapil;
+  const isSingleMenu = isPengurusBarang || isDinsos || isDukcapil || isRSUD;
 
   const allCards = [
     {
@@ -128,11 +129,13 @@ const Dashboard = () => {
         ? "Pendaftaran & Verifikasi PBPU BP"
         : "Pendaftaran PBPU BP",
       desc: isYankes
-        ? "Pusat verifikasi kepesertaan PBPU BP dari Puskesmas & Dinsos, monitoring dashboard tren, penanganan NIK Dukcapil, dan ekspor data rekapitulasi."
+        ? "Pusat verifikasi kepesertaan PBPU BP dari Puskesmas, Dinsos, & RSUD, monitoring dashboard tren, penanganan NIK Dukcapil, dan ekspor data rekapitulasi."
         : isDukcapil
         ? "Pemeriksaan dan pembaruan status NIK bermasalah untuk calon peserta PBPU BP setelah penyelesaian di SIAK."
         : isDinsos
         ? "Pengajuan usulan calon peserta PBPU BP jalur Dinas Sosial (Desil 1–5), unggah bukti desil, dan pantau status."
+        : isRSUD
+        ? "Pengajuan usulan calon peserta PBPU BP jalur Rumah Sakit Umum Daerah (Kondisi Khusus DPJP / SKTM) dan pantau proses verifikasi."
         : isPuskesmas
         ? "Pengajuan usulan calon peserta PBPU BP jalur Puskesmas (Kondisi Khusus DPJP / SKTM) dan pantau proses verifikasi."
         : "Pendaftaran dan pemantauan usulan kepesertaan PBPU BP Pemerintah Daerah.",
@@ -142,6 +145,8 @@ const Dashboard = () => {
         ? "Tindak Lanjut NIK Dukcapil"
         : isDinsos
         ? "Jalur Dinas Sosial"
+        : isRSUD
+        ? "Jalur RSUD"
         : isPuskesmas
         ? "Jalur Puskesmas"
         : "Pendaftaran & Verifikasi",
@@ -157,8 +162,8 @@ const Dashboard = () => {
   } else if (isPuskesmas) {
     // Puskesmas: Usulan SHS dan Pendaftaran PBPU BP
     cards = allCards.filter(c => c.id === "shs" || c.id === "pbpu");
-  } else if (isDinsos || isDukcapil) {
-    // Dinsos & Dukcapil: Hanya kartu PBPU BP
+  } else if (isDinsos || isDukcapil || isRSUD) {
+    // Dinsos, Dukcapil, & RSUD: Hanya kartu PBPU BP
     cards = allCards.filter(c => c.id === "pbpu");
   } else if (isOB) {
     cards = allCards.filter(c => c.id === "kebersihan" || c.id === "ruangan");

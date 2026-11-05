@@ -48,6 +48,7 @@ import {
   PBPUDocumentType,
   PAMEKASAN_DISTRICTS,
   PAMEKASAN_PUSKESMAS,
+  PAMEKASAN_RSUD,
   PUSKESMAS_CONDITION_CATEGORIES,
 } from '@/types/pbpu';
 import { compressImage } from '@/lib/imageCompression';
@@ -92,6 +93,7 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
 }) => {
   const uname = (user?.username || '').toLowerCase();
   const isPuskesmasUser = user?.role === 'puskesmas' || uname.startsWith('puskesmas') || uname.startsWith('pkm_');
+  const isRsudUser = user?.role === 'rsud' || uname === 'rsud' || uname.startsWith('rsud');
   const isDinsosUser = user?.role === 'dinsos' || uname.includes('dinsos');
 
   // Jalur Pengusulan
@@ -102,6 +104,7 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
   // Unit Pengusul
   const [submitterUnit, setSubmitterUnit] = useState(() => {
     if (isDinsosUser) return 'Dinas Sosial Kabupaten Pamekasan';
+    if (isRsudUser) return PAMEKASAN_RSUD[0] || 'RSUD dr. H. Slamet Martodirdjo (SMART)';
     return PAMEKASAN_PUSKESMAS[0] || 'Puskesmas Proppo';
   });
 
@@ -117,11 +120,13 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
   const [district, setDistrict] = useState<string>(PAMEKASAN_DISTRICTS[0]);
   const [phone, setPhone] = useState('');
 
-  // Jalur Puskesmas
+  // Jalur Puskesmas / RSUD
   const [conditionCategory, setConditionCategory] = useState<string>(
     PUSKESMAS_CONDITION_CATEGORIES[0]
   );
-  const [healthFacility, setHealthFacility] = useState('');
+  const [healthFacility, setHealthFacility] = useState(
+    isRsudUser ? (PAMEKASAN_RSUD[0] || 'RSUD dr. H. Slamet Martodirdjo (SMART)') : ''
+  );
   const [dpjpName, setDpjpName] = useState('');
 
   // Jalur Dinsos
@@ -311,7 +316,7 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
       submitter_unit: submitterUnit,
 
       condition_category: channel === 'PUSKESMAS' ? conditionCategory : undefined,
-      health_facility: channel === 'PUSKESMAS' ? healthFacility.trim() || undefined : undefined,
+      health_facility: channel === 'PUSKESMAS' ? ((healthFacility.trim() || submitterUnit)) || undefined : undefined,
       dpjp_name: channel === 'PUSKESMAS' ? dpjpName.trim() || undefined : undefined,
 
       desil: channel === 'DINSOS' ? desil : undefined,
@@ -463,18 +468,22 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
                       : 'border-slate-200 hover:border-slate-300 text-slate-600'
                   }`}
                 >
-                  <p className="text-xs uppercase font-extrabold tracking-wide text-teal-700">Jalur Puskesmas</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Kondisi Khusus & SKTM</p>
+                  <p className="text-xs uppercase font-extrabold tracking-wide text-teal-700">
+                    {isRsudUser ? 'Jalur RSUD' : 'Jalur Puskesmas'}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    {isRsudUser ? 'Kondisi Khusus & SKTM RSUD' : 'Kondisi Khusus & SKTM'}
+                  </p>
                 </button>
 
                 <button
                   type="button"
-                  disabled={isPuskesmasUser}
+                  disabled={isPuskesmasUser || isRsudUser}
                   onClick={() => setChannel('DINSOS')}
                   className={`p-3 rounded-xl border text-left transition-all ${
                     channel === 'DINSOS'
                       ? 'border-blue-600 bg-blue-50/70 text-blue-900 font-bold shadow-sm'
-                      : isPuskesmasUser
+                      : isPuskesmasUser || isRsudUser
                       ? 'opacity-40 cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
                       : 'border-slate-200 hover:border-slate-300 text-slate-600'
                   }`}
@@ -487,7 +496,26 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
 
             <div className="space-y-2">
               <Label className="text-xs font-semibold text-slate-700">Unit / Instansi Pengusul *</Label>
-              {channel === 'PUSKESMAS' ? (
+              {isRsudUser ? (
+                <Select
+                  value={submitterUnit}
+                  onValueChange={(val) => {
+                    setSubmitterUnit(val);
+                    setHealthFacility(val);
+                  }}
+                >
+                  <SelectTrigger className="w-full bg-white font-medium">
+                    <SelectValue placeholder="Pilih RSUD" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAMEKASAN_RSUD.map((rs) => (
+                      <SelectItem key={rs} value={rs}>
+                        {rs}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : channel === 'PUSKESMAS' ? (
                 <Select value={submitterUnit} onValueChange={setSubmitterUnit}>
                   <SelectTrigger className="w-full bg-white">
                     <SelectValue placeholder="Pilih Puskesmas" />
@@ -673,7 +701,7 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
             <CardHeader className="pb-3 border-b border-teal-100">
               <div className="flex items-center gap-2 text-teal-800 font-bold text-sm">
                 <HeartPulse size={18} />
-                <span>3. Detail Kondisi Pasien (Jalur Puskesmas)</span>
+                <span>3. Detail Kondisi Pasien ({isRsudUser ? 'Jalur RSUD' : 'Jalur Puskesmas'})</span>
               </div>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
@@ -704,7 +732,7 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
                   <Input
                     value={healthFacility}
                     onChange={(e) => setHealthFacility(e.target.value)}
-                    placeholder="Puskesmas / RSUD SMART Pamekasan"
+                    placeholder={isRsudUser ? "RSUD dr. H. Slamet Martodirdjo (SMART)" : "Puskesmas / RSUD SMART Pamekasan"}
                   />
                 </div>
 

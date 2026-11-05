@@ -46,6 +46,7 @@ const getRoleLabel = (role?: string, is_ob?: boolean, username?: string) => {
   if (uname === "yankes") return "Bidang Yankes (Verifikator)";
   if (uname === "dinsos") return "Dinas Sosial (Pengusul)";
   if (uname === "dukcapil") return "Dukcapil (Pemeriksa NIK)";
+  if (role === "rsud" || uname === "rsud") return "RSUD (Pengusul)";
   if (role === "pengurus_barang") return "Pengurus Barang (Verifikator)";
   if (role === "puskesmas" || uname.startsWith("puskesmas")) return "Puskesmas (Pengusul)";
   if (is_ob || role === "ob" || uname === "fathor") return "Petugas OB";
@@ -61,6 +62,7 @@ const Header = ({ user, onLogout }: HeaderProps) => {
 
   const uname = (user?.username || "").toLowerCase();
   const isPuskesmas = user?.role === "puskesmas" || uname.startsWith("puskesmas") || uname.startsWith("pkm_");
+  const isRSUD = user?.role === "rsud" || uname === "rsud" || uname.startsWith("rsud");
   const isDinsos = user?.role === "dinsos" || uname === "dinsos";
   const isDukcapil = user?.role === "dukcapil" || uname === "dukcapil";
   const isPengurusBarang = user?.role === "pengurus_barang" || uname.startsWith("pengurus");
@@ -88,8 +90,8 @@ const Header = ({ user, onLogout }: HeaderProps) => {
       { name: "PBPU BP", path: "/pbpu-bp", icon: HeartHandshake, isActive: (p) => p === "/pbpu-bp" },
       { name: "Usulan SHS", path: "/usulan-shs", icon: FileSpreadsheet, isActive: (p) => p === "/usulan-shs" },
     ];
-  } else if (isDinsos || isDukcapil) {
-    // Dinsos (Pengusul) atau Dukcapil (Pemeriksa NIK): Beranda dan PBPU BP
+  } else if (isDinsos || isDukcapil || isRSUD) {
+    // Dinsos, Dukcapil, & RSUD: Beranda dan PBPU BP
     navItems = [
       { name: "Beranda", path: "/", icon: Home, isActive: (p) => p === "/" },
       { name: "PBPU BP", path: "/pbpu-bp", icon: HeartHandshake, isActive: (p) => p === "/pbpu-bp" },

@@ -35,6 +35,7 @@ interface PBPUDashboardStatsProps {
     nikBermasalah: number;
     nikClear: number;
     jalurPuskesmas: number;
+    jalurRSUD?: number;
     jalurDinsos: number;
     byDistrict: Record<string, number>;
     byUnit: Record<string, number>;
@@ -42,7 +43,7 @@ interface PBPUDashboardStatsProps {
 }
 
 const STATUS_COLORS = ['#f59e0b', '#10b981', '#ef4444'];
-const CHANNEL_COLORS = ['#0d9488', '#3b82f6'];
+const CHANNEL_COLORS = ['#0d9488', '#8b5cf6', '#3b82f6'];
 
 export const PBPUDashboardStats: React.FC<PBPUDashboardStatsProps> = ({
   submissions,
@@ -58,6 +59,7 @@ export const PBPUDashboardStats: React.FC<PBPUDashboardStatsProps> = ({
   // Chart Data: Jalur
   const channelPieData = [
     { name: 'Jalur Puskesmas', value: stats.jalurPuskesmas },
+    { name: 'Jalur RSUD', value: stats.jalurRSUD || 0 },
     { name: 'Jalur Dinsos', value: stats.jalurDinsos },
   ].filter((d) => d.value > 0);
 

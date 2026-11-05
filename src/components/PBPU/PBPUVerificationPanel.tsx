@@ -87,7 +87,7 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | PBPUVerificationStatus>('ALL');
-  const [channelFilter, setChannelFilter] = useState<'ALL' | PBPUSubmissionChannel>('ALL');
+  const [channelFilter, setChannelFilter] = useState<'ALL' | PBPUSubmissionChannel | 'RSUD'>('ALL');
   const [nikStatusFilter, setNikStatusFilter] = useState<'ALL' | PBPUNikStatus>('ALL');
 
   // Privacy: Masking NIK
@@ -119,8 +119,19 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
       sub.registration_no.toLowerCase().includes(term) ||
       sub.submitter_unit.toLowerCase().includes(term);
 
+    const isSubRSUD =
+      sub.submitter_unit.toLowerCase().includes('rsud') ||
+      Boolean(sub.submitter_username && sub.submitter_username.toLowerCase().includes('rsud'));
+
     const matchStatus = statusFilter === 'ALL' || sub.verification_status === statusFilter;
-    const matchChannel = channelFilter === 'ALL' || sub.submission_channel === channelFilter;
+    const matchChannel =
+      channelFilter === 'ALL'
+        ? true
+        : channelFilter === 'RSUD'
+        ? isSubRSUD
+        : channelFilter === 'PUSKESMAS'
+        ? sub.submission_channel === 'PUSKESMAS' && !isSubRSUD
+        : sub.submission_channel === 'DINSOS';
     const matchNikStatus = nikStatusFilter === 'ALL' || sub.nik_status === nikStatusFilter;
 
     return matchSearch && matchStatus && matchChannel && matchNikStatus;
@@ -250,6 +261,7 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
             <SelectContent>
               <SelectItem value="ALL">Semua Jalur</SelectItem>
               <SelectItem value="PUSKESMAS">Jalur Puskesmas</SelectItem>
+              <SelectItem value="RSUD">Jalur RSUD</SelectItem>
               <SelectItem value="DINSOS">Jalur Dinsos</SelectItem>
             </SelectContent>
           </Select>
@@ -340,16 +352,26 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
                       </td>
 
                       <td className="py-3.5 px-4">
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] font-bold ${
-                            sub.submission_channel === 'PUSKESMAS'
-                              ? 'border-teal-300 text-teal-800 bg-teal-50'
-                              : 'border-blue-300 text-blue-800 bg-blue-50'
-                          }`}
-                        >
-                          {sub.submission_channel}
-                        </Badge>
+                        {sub.submitter_unit.toLowerCase().includes('rsud') ||
+                        (sub.submitter_username && sub.submitter_username.toLowerCase().includes('rsud')) ? (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] font-bold border-purple-300 text-purple-800 bg-purple-50"
+                          >
+                            RSUD
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-bold ${
+                              sub.submission_channel === 'PUSKESMAS'
+                                ? 'border-teal-300 text-teal-800 bg-teal-50'
+                                : 'border-blue-300 text-blue-800 bg-blue-50'
+                            }`}
+                          >
+                            {sub.submission_channel}
+                          </Badge>
+                        )}
                         <p className="text-[11px] font-medium text-slate-600 mt-1">
                           {sub.submitter_unit}
                         </p>
@@ -563,7 +585,12 @@ export const PBPUVerificationPanel: React.FC<PBPUVerificationPanelProps> = ({
                     <div className="grid grid-cols-3 gap-1">
                       <span className="text-slate-500">Jalur / Unit:</span>
                       <span className="col-span-2 text-slate-800 font-semibold">
-                        {selectedSubmission.submission_channel} ({selectedSubmission.submitter_unit})
+                        {selectedSubmission.submitter_unit.toLowerCase().includes('rsud') ||
+                        (selectedSubmission.submitter_username &&
+                          selectedSubmission.submitter_username.toLowerCase().includes('rsud'))
+                          ? 'RSUD'
+                          : selectedSubmission.submission_channel}{' '}
+                        ({selectedSubmission.submitter_unit})
                       </span>
                     </div>
                     <div className="grid grid-cols-3 gap-1">

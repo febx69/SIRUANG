@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
-export type UserRole = 'admin' | 'user' | 'bidang' | 'ob' | 'puskesmas' | 'pengurus_barang' | 'dinsos' | 'dukcapil';
+export type UserRole = 'admin' | 'user' | 'bidang' | 'ob' | 'puskesmas' | 'pengurus_barang' | 'dinsos' | 'dukcapil' | 'rsud';
 
 export interface User {
   id: string;
@@ -18,6 +18,7 @@ export const resolveRole = (data?: { username?: string; role?: string; is_ob?: b
   if (Boolean(data.is_ob) || data.role === 'ob' || uname === 'fathor') return 'ob';
   if (uname === 'dinsos' || uname.startsWith('dinsos_')) return 'dinsos';
   if (uname === 'dukcapil' || uname.startsWith('dukcapil_')) return 'dukcapil';
+  if (uname === 'rsud' || uname.startsWith('rsud_') || data.role === 'rsud') return 'rsud';
   if (
     uname === 'pengurus_barang' ||
     uname === 'pengurusbarang' ||
@@ -49,6 +50,12 @@ export const isUserPuskesmas = (user: User | null): boolean => {
   return user.role === 'puskesmas';
 };
 
+export const isUserRSUD = (user: User | null): boolean => {
+  if (!user) return false;
+  const uname = (user.username || '').toLowerCase();
+  return user.role === 'rsud' || uname === 'rsud' || uname.startsWith('rsud');
+};
+
 export const isUserPengurusBarang = (user: User | null): boolean => {
   if (!user) return false;
   return user.role === 'pengurus_barang' || (user.username || '').toLowerCase().startsWith('pengurus');
@@ -61,16 +68,19 @@ export const isUserYankes = (user: User | null): boolean => {
   return uname === 'yankes' || uname.includes('yankes');
 };
 
-// Pengusul: Puskesmas & Dinas Sosial
+// Pengusul: Puskesmas, Dinas Sosial, & RSUD
 export const isUserPengusul = (user: User | null): boolean => {
   if (!user) return false;
   const uname = (user.username || '').toLowerCase();
   return (
     user.role === 'puskesmas' ||
     user.role === 'dinsos' ||
+    user.role === 'rsud' ||
     uname === 'dinsos' ||
+    uname === 'rsud' ||
     uname.startsWith('puskesmas') ||
-    uname.startsWith('pkm_')
+    uname.startsWith('pkm_') ||
+    uname.startsWith('rsud')
   );
 };
 

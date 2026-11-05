@@ -176,3 +176,10 @@ export const PUSKESMAS_CONDITION_CATEGORIES = [
   'Masyarakat Sakit di Luar Kondisi Tertentu',
 ] as const;
 
+// Daftar Rumah Sakit Umum Daerah (RSUD) di Kabupaten Pamekasan
+export const PAMEKASAN_RSUD = [
+  'RSUD dr. H. Slamet Martodirdjo (SMART)',
+  'RSUD Waru Pamekasan',
+  'RSUD Mohammad Noer Pamekasan',
+] as const;
+
