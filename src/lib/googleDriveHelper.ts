@@ -8,7 +8,8 @@
 
 // URL endpoint default Google Apps Script Web App (bisa diisi via .env: VITE_GOOGLE_DRIVE_WEBAPP_URL)
 export const DEFAULT_GAS_WEBAPP_URL =
-  (import.meta as any).env?.VITE_GOOGLE_DRIVE_WEBAPP_URL || '';
+  (import.meta as any).env?.VITE_GOOGLE_DRIVE_WEBAPP_URL ||
+  'https://script.google.com/macros/s/AKfycbxemvjLQ2WHVx9ic5nUe8guzXhl0cLz1qgHCIII4riopT6wRHVtg_rrBR0K7414zZZ9/exec';
 
 /**
  * Mengecek apakah URL berasal dari Google Drive
@@ -95,29 +96,40 @@ export interface DriveUploadResponse {
  * Mengunggah file ke Google Drive via endpoint Google Apps Script
  */
 export async function uploadFileToGoogleDrive(
-  file: File,
-  folderName: string = 'PBPU_BP_Pamekasan',
+  fileOrData: File | { filename: string; mimetype: string; base64: string },
+  folderName: string = 'PBPU_BP_Dinkes_Pamekasan',
   webAppUrl: string = DEFAULT_GAS_WEBAPP_URL
 ): Promise<DriveUploadResponse> {
   if (!webAppUrl) {
     return {
       success: false,
-      error: 'URL Web App Google Apps Script belum disetel. Silakan atur VITE_GOOGLE_DRIVE_WEBAPP_URL di .env.',
+      error: 'URL Web App Google Apps Script belum disetel.',
     };
   }
 
   try {
-    // Konversi file ke Base64
-    const base64Data = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+    let filename = '';
+    let mimetype = 'application/octet-stream';
+    let base64Data = '';
+
+    if ('base64' in fileOrData) {
+      filename = fileOrData.filename;
+      mimetype = fileOrData.mimetype;
+      base64Data = fileOrData.base64;
+    } else {
+      filename = fileOrData.name;
+      mimetype = fileOrData.type || 'application/octet-stream';
+      base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(fileOrData);
+      });
+    }
 
     const payload = {
-      filename: file.name,
-      mimetype: file.type || 'application/octet-stream',
+      filename,
+      mimetype,
       base64: base64Data,
       folderName,
     };
@@ -139,7 +151,7 @@ export async function uploadFileToGoogleDrive(
         previewUrl: `https://drive.google.com/file/d/${result.fileId}/preview`,
         directUrl: `https://lh3.googleusercontent.com/d/${result.fileId}`,
         downloadUrl: `https://drive.google.com/uc?export=download&id=${result.fileId}`,
-        fileName: file.name,
+        fileName: filename,
       };
     }
 
