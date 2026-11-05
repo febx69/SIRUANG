@@ -101,14 +101,8 @@ export const PBPUSubmissionForm: React.FC<PBPUSubmissionFormProps> = ({
 
   // Unit Pengusul
   const [submitterUnit, setSubmitterUnit] = useState(() => {
-    if (isPuskesmasUser) {
-      const match = PAMEKASAN_PUSKESMAS.find((p) =>
-        p.toLowerCase().replace(/[\s']/g, '').includes(uname.replace(/puskesmas_?/i, '') || '')
-      );
-      return match || user?.username || 'Puskesmas Proppo';
-    }
     if (isDinsosUser) return 'Dinas Sosial Kabupaten Pamekasan';
-    return 'Puskesmas Proppo';
+    return PAMEKASAN_PUSKESMAS[0] || 'Puskesmas Proppo';
   });
 
   // Data Calon Peserta

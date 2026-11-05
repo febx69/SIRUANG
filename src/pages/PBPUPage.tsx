@@ -78,15 +78,13 @@ export const PBPUPage: React.FC = () => {
         (s) => s.submission_channel === 'DINSOS' || s.submitter_unit.toLowerCase().includes('sosial')
       );
     }
-    const cleanPkm = uname.replace(/puskesmas_?|pkm_?/i, '').toLowerCase();
-    return submissions.filter((s) => {
-      const unitLower = s.submitter_unit.toLowerCase();
-      return (
-        unitLower.includes(cleanPkm) ||
-        (s.submitter_username && s.submitter_username.toLowerCase() === uname)
-      );
-    });
-  }, [submissions, isPengusul, isDinsos, uname]);
+    // Akun tunggal Puskesmas: menampilkan seluruh usulan jalur Puskesmas
+    return submissions.filter(
+      (s) =>
+        s.submission_channel === 'PUSKESMAS' ||
+        (s.submitter_username && s.submitter_username.toLowerCase().includes('puskesmas'))
+    );
+  }, [submissions, isPengusul, isDinsos]);
 
   const unitNikBermasalahCount = React.useMemo(() => {
     return unitSubmissions.filter((s) => s.nik_status === 'BERMASALAH').length;
